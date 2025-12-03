@@ -1,14 +1,14 @@
 -- Crear la base de datos
-CREATE DATABASE IF NOT EXISTS webservice;
+CREATE DATABASE IF NOT EXISTS API;
 
 -- Usar la base de datos
-USE webservice;
+USE API;
 
 -- Crear el usuario webservice
 CREATE USER IF NOT EXISTS 'webservice'@'localhost' IDENTIFIED BY 'webservice';
 
 -- Dar todos los permisos al usuario sobre la base de datos
-GRANT ALL PRIVILEGES ON webservice.* TO 'webservice'@'localhost';
+GRANT ALL PRIVILEGES ON API.* TO 'webservice'@'localhost';
 
 -- Aplicar los cambios
 FLUSH PRIVILEGES;
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS clientes (
     apellidos VARCHAR(200) NOT NULL,
     dni VARCHAR(20) UNIQUE NOT NULL,
     correo VARCHAR(150) UNIQUE NOT NULL,
-    telefono VARCHAR(20),
+    telefono VARCHAR(20)
 );
 
 -- Crear tabla habitaciones
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS habitaciones (
     tipo VARCHAR(50) NOT NULL,
     precio DECIMAL(10,2) NOT NULL,
     suite BOOLEAN DEFAULT FALSE,
-    num_personas INT NOT NULL CHECK (num_personas >= 1 AND num_personas <= 6),
+    num_personas INT NOT NULL
 );
 
 -- Crear tabla reservas
@@ -44,8 +44,7 @@ CREATE TABLE IF NOT EXISTS reservas (
     precio_total DECIMAL(10,2) NOT NULL,
     estado VARCHAR(20) DEFAULT 'activa',
     FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE CASCADE,
-    FOREIGN KEY (habitacion_id) REFERENCES habitaciones(id) ON DELETE CASCADE,
-    CHECK (fecha_salida > fecha_entrada)
+    FOREIGN KEY (habitacion_id) REFERENCES habitaciones(id) ON DELETE CASCADE
 );
 
 -- Insertar datos de ejemplo para clientes
