@@ -21,7 +21,6 @@ CREATE TABLE IF NOT EXISTS clientes (
     dni VARCHAR(20) UNIQUE NOT NULL,
     correo VARCHAR(150) UNIQUE NOT NULL,
     telefono VARCHAR(20),
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Crear tabla habitaciones
@@ -33,8 +32,6 @@ CREATE TABLE IF NOT EXISTS habitaciones (
     precio DECIMAL(10,2) NOT NULL,
     suite BOOLEAN DEFAULT FALSE,
     num_personas INT NOT NULL CHECK (num_personas >= 1 AND num_personas <= 6),
-    estado VARCHAR(20) DEFAULT 'disponible',
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Crear tabla reservas
@@ -46,7 +43,6 @@ CREATE TABLE IF NOT EXISTS reservas (
     fecha_salida DATE NOT NULL,
     precio_total DECIMAL(10,2) NOT NULL,
     estado VARCHAR(20) DEFAULT 'activa',
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE CASCADE,
     FOREIGN KEY (habitacion_id) REFERENCES habitaciones(id) ON DELETE CASCADE,
     CHECK (fecha_salida > fecha_entrada)
