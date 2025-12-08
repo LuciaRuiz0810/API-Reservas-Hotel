@@ -47,6 +47,12 @@ CREATE TABLE IF NOT EXISTS reservas (
     FOREIGN KEY (habitacion_id) REFERENCES habitaciones(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS usuarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre_usuario VARCHAR(100) NOT NULL,
+    correo_usuario VARCHAR(150) NOT NULL UNIQUE,
+    contraseña_usuario VARCHAR(255) NOT NULL
+);
 -- Insertar datos de ejemplo para clientes
 INSERT INTO clientes (nombre, apellidos, dni, correo, telefono) VALUES
 ('Juan', 'Pérez García', '12345678A', 'juan.perez@email.com', '666123456'),
@@ -71,3 +77,4 @@ INSERT INTO reservas (cliente_id, habitacion_id, fecha_entrada, fecha_salida, pr
 (2, 2, '2025-01-20', '2025-01-25', 600.00),
 (3, 5, '2025-02-01', '2025-02-05', 1000.00),
 (4, 6, '2025-02-10', '2025-02-12', 360.00);
+
