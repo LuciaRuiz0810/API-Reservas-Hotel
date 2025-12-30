@@ -1,0 +1,11 @@
+# Redirige todas las URLs que NO sean archivos físicos hacia index.php, permitiendo que tengas URLs limpias como /users/5 en lugar de /index.php?ruta=users&id=5.
+
+
+# Activar motor de reescritura
+RewriteEngine On
+
+# Si no es archivo ni directorio, redirigir a index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
+
