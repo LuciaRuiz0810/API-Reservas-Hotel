@@ -13,6 +13,22 @@ GRANT ALL PRIVILEGES ON API.* TO 'webservice'@'localhost';
 -- Aplicar los cambios
 FLUSH PRIVILEGES;
 
+-- Crear tabla usuarios
+CREATE TABLE IF NOT EXISTS usuarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre_usuario VARCHAR(100) NOT NULL,
+    correo_usuario VARCHAR(150) NOT NULL UNIQUE,
+    contrasena_usuario VARCHAR(255) NOT NULL,
+    rango INT NOT NULL
+    -- Diferencias por rango
+        -- 1: POST
+        -- 2: PUT
+        -- 3: DELETE
+        -- 4: POST + PUT
+        -- 5: PUT + DELETE
+        -- 6: TODO
+);
+
 -- Crear tabla clientes
 CREATE TABLE IF NOT EXISTS clientes (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -49,20 +65,14 @@ CREATE TABLE IF NOT EXISTS reservas (
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
 
--- Crear tabla usuarios
-CREATE TABLE IF NOT EXISTS usuarios (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre_usuario VARCHAR(100) NOT NULL,
-    correo_usuario VARCHAR(150) NOT NULL UNIQUE,
-    contrasena_usuario VARCHAR(255) NOT NULL,
-    rango INT NOT NULL
-    -- Diferencias por rango
-        -- 1: POST
-        -- 2: PUT
-        -- 3: DELETE
-        -- 4: POST + PUT
-        -- 5: PUT + DELETE
-        -- 6: TODO
+-- Insertar datos de usuario
+INSERT INTO usuarios (nombre_usuario, correo_usuario, contrasena_usuario, rango)
+VALUES (
+  'admin',
+  'admin@email.com',
+-- Contraseña primria, al publicarla en internet hay que borrarla y crear nuevas
+  '$2y$10$4b/VQeWZ1gxgMMDVrXjFMu8W0rX9zhLQ7ZgVYlkX.Q8pPx1f1stz2', -- 2DawAp1
+  6
 );
 
 -- Insertar datos de ejemplo para clientes
@@ -84,8 +94,8 @@ INSERT INTO habitaciones (numero, planta, tipo, precio, suite, num_personas) VAL
 (302, 3, 'Doble Deluxe', 180.00, FALSE, 2);
 
 -- Insertar datos de ejemplo para reservas
-INSERT INTO reservas (cliente_id, habitacion_id, fecha_entrada, fecha_salida, precio_total) VALUES
-(1, 1, '2025-01-15', '2025-01-18', 240.00),
-(2, 2, '2025-01-20', '2025-01-25', 600.00),
-(3, 5, '2025-02-01', '2025-02-05', 1000.00),
-(4, 6, '2025-02-10', '2025-02-12', 360.00);
+INSERT INTO reservas (cliente_id, habitacion_id, usuario_id, fecha_entrada, fecha_salida, precio_total) VALUES
+(1, 1, 1, '2025-01-15', '2025-01-18', 240.00),
+(2, 2, 1, '2025-01-20', '2025-01-25', 600.00),
+(3, 5, 1, '2025-02-01', '2025-02-05', 1000.00),
+(4, 6, 1, '2025-02-10', '2025-02-12', 360.00);

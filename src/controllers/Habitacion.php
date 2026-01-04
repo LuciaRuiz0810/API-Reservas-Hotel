@@ -85,6 +85,138 @@ if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
 }
 
 
+//PETICION POST
+/* 
+Opcion 1
+{
+  "usuario": {
+    "usuario": "admin",
+    "contrasena": "2DawAp1"
+  },
+  "habitacion": {
+    "numero": "400",
+    "planta": "4",
+    "tipo": "Familiar",
+    "precio": "400",
+    "suite": "1",
+    "num_personas": "4"
+  },
+  "opcion": {
+    "n": 1
+  }
+}
+
+Opcion 2
+{
+  "usuario": {
+    "usuario": "admin",
+    "contrasena": "2DawAp1"
+  },
+  "habitacion": {
+    "numero": "400",
+    "planta": "4",
+    "tipo": "Familiar",
+    "precio": "400",
+    "suite": "1",
+    "num_personas": "4",
+    "n_habitaciones": "20"
+  },
+  "opcion": {
+    "n": 2
+  }
+}
+
+*/
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    try {
+        $datos = json_decode(file_get_contents("php://input"), true);
+
+        autenticarUsuario($conexion, $datos, [1,4,6]);
+
+        // Validar datos del cliente
+        if (
+            empty($datos['habitacion']['numero']) ||
+            empty($datos['habitacion']['planta']) ||
+            empty($datos['habitacion']['tipo']) ||
+            empty($datos['habitacion']['precio']) ||
+            empty($datos['habitacion']['suite']) ||
+            empty($datos['habitacion']['num_personas']) ||
+            empty($datos['opcion']['n'])
+        ) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Faltan datos de la habitacion']);
+            exit();
+        }
+
+        $habitacion = $datos['habitacion'];
+
+        //Comprobamos si quiere ir añadiendo las habitaciones de una en una o por plantas de manera generica
+        if ($datos['opcion']['n'] == 1) {
+           //insertar valores manera individual
+            $sql = $conexion->prepare(
+                'INSERT INTO habitaciones (numero, planta, tipo, precio, suite, num_personas)
+                VALUES (:numero, :planta, :tipo, :precio, :suite, :num_personas)'
+            );
+
+            $sql->bindValue(':numero', $habitacion['numero']);
+            $sql->bindValue(':planta', $habitacion['planta']);
+            $sql->bindValue(':tipo', $habitacion['tipo']);
+            $sql->bindValue(':precio', $habitacion['precio']);
+            $sql->bindValue(':suite', $habitacion['suite'] ?? null);
+            $sql->bindValue(':num_personas', $habitacion['num_personas'] ?? null);
+
+            $sql->execute();
+
+            http_response_code(201);
+            echo json_encode([
+                'mensaje' => 'Habitacion creada correctamente',
+                'id' => $conexion->lastInsertId()
+            ]);
+            exit(); 
+        } else {
+            if (
+                empty($datos['habitacion']['n_habitaciones'])
+            ) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Faltan datos de la habitacion']);
+                exit();
+            }
+
+            //insertar valores en bloque
+            $sql = $conexion->prepare(
+                'INSERT INTO habitaciones (numero, planta, tipo, precio, suite, num_personas)
+                VALUES (:numero, :planta, :tipo, :precio, :suite, :num_personas)'
+            );
+
+            for ($i=$habitacion['numero']; $i < ($habitacion['n_habitaciones']+$habitacion['numero']) ; $i++) { 
+            $sql->bindValue(':numero', $i);
+            $sql->bindValue(':planta', $habitacion['planta']);
+            $sql->bindValue(':tipo', $habitacion['tipo']);
+            $sql->bindValue(':precio', $habitacion['precio']);
+            $sql->bindValue(':suite', $habitacion['suite'] ?? null);
+            $sql->bindValue(':num_personas', $habitacion['num_personas'] ?? null);
+
+            $sql->execute();
+            }
+
+            http_response_code(201);
+            echo json_encode([
+                'mensaje' => 'Habitaciones creadas correctamente',
+                'total' => $habitacion['n_habitaciones']
+            ]);
+            exit(); 
+        }
+
+        
+
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Error interno del servidor']);
+        exit();
+    }
+}
+
 
 
 

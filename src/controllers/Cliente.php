@@ -9,56 +9,56 @@ include(__DIR__ . '/../config/utils.php');
 $conexion = connect($db);
 
 //PETICIÓN GET  
-if ($_SERVER['REQUEST_METHOD'] == 'GET'){
+if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
-    try{
- //En caso de especificarse un id
-    if(isset($_GET['id'])){
-        //Ej --> http://localhost/API/src/controllers/Cliente.php?id=1 / http://localhost/API/clientes/1
-        $sql = $conexion->prepare('SELECT * FROM clientes where id=:id');
-        $sql -> bindValue(':id' , $_GET['id']);
-        $sql->execute();
-        header("HTTP/1.1 200 OK");
-        echo json_encode($sql -> fetch(PDO::FETCH_ASSOC));
-        exit();
+    try {
+        //En caso de especificarse un id
+        if (isset($_GET['id'])) {
+            //Ej --> http://localhost/API/src/controllers/Cliente.php?id=1 / http://localhost/API/clientes/1
+            $sql = $conexion->prepare('SELECT * FROM clientes where id=:id');
+            $sql->bindValue(':id', $_GET['id']);
+            $sql->execute();
+            header("HTTP/1.1 200 OK");
+            echo json_encode($sql->fetch(PDO::FETCH_ASSOC));
+            exit();
 
-    //En caso de querer listar a todos los clientes
-    }else{
+            //En caso de querer listar a todos los clientes
+        } else {
 
-        $sql = $conexion->prepare('SELECT * FROM clientes');
-        $sql->execute();
-        header("HTTP/1.1 200 OK");
-        echo json_encode($sql->fetchAll(PDO::FETCH_ASSOC));
-        exit();
-    }
+            $sql = $conexion->prepare('SELECT * FROM clientes');
+            $sql->execute();
+            header("HTTP/1.1 200 OK");
+            echo json_encode($sql->fetchAll(PDO::FETCH_ASSOC));
+            exit();
+        }
 
-    //En caso de que la petición GET falle
+        //En caso de que la petición GET falle
     } catch (PDOException $e) {
         header("HTTP/1.1 500 Internal Server Error");
         echo json_encode(['error' => 'Error al obtener el/los cliente/s']);
         exit();
     }
 
-   
+
 }
 
 //PETICIÓN DELETE
 if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
 
     try {
-         //En caso de especificarse un id
+        //En caso de especificarse un id
         if (isset($_GET['id'])) {
-            
+
             $sql = $conexion->prepare('DELETE FROM clientes WHERE id = :id');
             $sql->bindValue(':id', $_GET['id']);
             $sql->execute();
 
             header("HTTP/1.1 200 OK");
-             echo json_encode(['El cliente con el id ' . $_GET['id'] . ' ha sido eliminado']);
+            echo json_encode(['El cliente con el id ' . $_GET['id'] . ' ha sido eliminado']);
             exit();
 
-        //En caso de querer borrar a TODOS los clientes
-        //Ej --> http://localhost/API/src/controllers/Cliente.php?all=true
+            //En caso de querer borrar a TODOS los clientes
+            //Ej --> http://localhost/API/src/controllers/Cliente.php?all=true
         } elseif (isset($_GET['all']) && $_GET['all'] == 'true') {
 
             $sql = $conexion->prepare('DELETE FROM clientes');
@@ -85,6 +85,100 @@ if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
 }
 
 
+//Peticion POST
+
+/*
+{
+  "usuario": {
+    "usuario": "admin",
+    "contrasena": "2DawAp1"
+  },
+  "cliente": {
+    "nombre": "Laura",
+    "apellidos": "Martín Pérez",
+    "dni": "77889900A",
+    "correo": "laura@email.com",
+    "telefono": "622334455"
+  }
+}
+*/
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    try {
+
+        $datos = json_decode(file_get_contents("php://input"), true);
+
+        // Validar credenciales
+        autenticarUsuario($conexion, $datos, [1, 4, 6]);
+
+        // Validar datos del cliente
+        if (
+            empty($datos['cliente']['nombre']) ||
+            empty($datos['cliente']['apellidos']) ||
+            empty($datos['cliente']['dni']) ||
+            empty($datos['cliente']['correo'])
+        ) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Faltan datos del cliente']);
+            exit();
+        }
+
+        $cliente = $datos['cliente'];
+
+        // DNI duplicado
+        $checkDni = $conexion->prepare(
+            'SELECT id FROM clientes WHERE dni = :dni'
+        );
+        $checkDni->bindValue(':dni', $cliente['dni']);
+        $checkDni->execute();
+
+        if ($checkDni->fetch()) {
+            http_response_code(409);
+            echo json_encode(['error' => 'El DNI ya existe']);
+            exit();
+        }
+
+        // Correo duplicado
+        $checkCorreo = $conexion->prepare(
+            'SELECT id FROM clientes WHERE correo = :correo'
+        );
+        $checkCorreo->bindValue(':correo', $cliente['correo']);
+        $checkCorreo->execute();
+
+        if ($checkCorreo->fetch()) {
+            http_response_code(409);
+            echo json_encode(['error' => 'El correo ya existe']);
+            exit();
+        }
+
+        // Insertar cliente
+        $sql = $conexion->prepare(
+            'INSERT INTO clientes (nombre, apellidos, dni, correo, telefono)
+             VALUES (:nombre, :apellidos, :dni, :correo, :telefono)'
+        );
+
+        $sql->bindValue(':nombre', $cliente['nombre']);
+        $sql->bindValue(':apellidos', $cliente['apellidos']);
+        $sql->bindValue(':dni', $cliente['dni']);
+        $sql->bindValue(':correo', $cliente['correo']);
+        $sql->bindValue(':telefono', $cliente['telefono'] ?? null);
+
+        $sql->execute();
+
+        http_response_code(201);
+        echo json_encode([
+            'mensaje' => 'Cliente creado correctamente',
+            'id' => $conexion->lastInsertId()
+        ]);
+        exit();
+
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Error interno del servidor']);
+        exit();
+    }
+}
 
 
 
