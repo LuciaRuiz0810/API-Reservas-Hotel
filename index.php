@@ -17,7 +17,11 @@ $peticion = explode('/', trim($peticion, '/'));
 //Esta estructura analiza la URL enviada por Thunder Client y se ejecuta en el archivo correspondiente (cliente, habitaciones o reservas)
 
 //Si la URL empieza con 'clientes'
-if ($peticion[0] === 'clientes') {
+if($peticion[0] == ''){
+    //Carga un archivo basico
+    include(__DIR__ . '/src/controllers/inicio.php');
+
+} elseif ($peticion[0] === 'clientes') {
 
      // Si hay un número después de /clientes/ lo guardará en $_GET['id']
     if (isset($peticion[1]) && is_numeric($peticion[1])) {
@@ -50,13 +54,6 @@ if ($peticion[0] === 'clientes') {
     //Carga el archivo que maneja las peticiones de las reservas
     include(__DIR__ . '/src/controllers/Reserva.php');
 
-} elseif ($peticion[0] === 'usuarios') {
-
-    if (isset($peticion[1]) && is_numeric($peticion[1])) {
-        $_GET['id'] = $peticion[1];
-    }
-
-    include(__DIR__ . '/src/controllers/Usuarios.php');
 } else {
     http_response_code(404);
     echo json_encode(['error' => 'Ruta no encontrada']);
