@@ -12,13 +12,6 @@ $conexion = connect($db);
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     try {
-        
-         //Array de credenciales de sesión para verificar que el usuario tiene permisos
-          $datos = json_decode(file_get_contents("php://input"), true);
-
-        
-        //Validar credenciales (rangos con privilegios -> 1,4,6)
-        autenticarUsuario($conexion, $datos, [1, 4, 6]);
 
         //En caso de especificarse un id
         if (isset($_GET['id'])) {

@@ -13,11 +13,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     try {
 
-        $datos = json_decode(file_get_contents("php://input"), true);
-
-        // Validar credenciales
-        autenticarUsuario($conexion, $datos, [1, 4, 6]);
-
         //En caso de especificarse un id
         if (isset($_GET['id'])) {
             //Ej --> http://localhost/API/src/controllers/Reserva.php?id=1 / http://localhost/API/reservas/1

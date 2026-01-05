@@ -12,10 +12,6 @@ $conexion = connect($db);
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     try {
-          $datos = json_decode(file_get_contents("php://input"), true);
-
-        // Validar credenciales
-        autenticarUsuario($conexion, $datos, [1, 4, 6]);
 
         //En caso de especificarse un id
         if (isset($_GET['id'])) {
