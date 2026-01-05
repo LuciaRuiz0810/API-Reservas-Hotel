@@ -6,7 +6,4 @@ $db = [
     'password' => 'webservice',
     'db' =>'api'
 ]
-
-
-
 ?>
