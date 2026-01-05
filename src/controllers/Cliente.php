@@ -12,7 +12,7 @@ $conexion = connect($db);
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     try {
-
+        
         //En caso de especificarse un id
         if (isset($_GET['id'])) {
             //Ej --> http://localhost/API/src/controllers/Cliente.php?id=1 / http://localhost/API/clientes/1
