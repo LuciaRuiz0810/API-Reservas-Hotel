@@ -9,79 +9,110 @@ include(__DIR__ . '/../config/utils.php');
 $conexion = connect($db);
 
 //PETICIÓN GET  
-if ($_SERVER['REQUEST_METHOD'] == 'GET'){
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
-    try{
- //En caso de especificarse un id
-    if(isset($_GET['id'])){
-        //Ej --> http://localhost/API/src/controllers/Reserva.php?id=1 / http://localhost/API/Reserva/1
-        $sql = $conexion->prepare('SELECT * FROM reservas where id=:id');
-        $sql -> bindValue(':id' , $_GET['id']);
-        $sql->execute();
-        header("HTTP/1.1 200 OK");
-        echo json_encode($sql -> fetch(PDO::FETCH_ASSOC));
-        exit();
+    try {
 
-    //En caso de querer listar a todos las Reservas
-    }else{
+        $datos = json_decode(file_get_contents("php://input"), true);
 
-        $sql = $conexion->prepare('SELECT * FROM reservas');
-        $sql->execute();
-        header("HTTP/1.1 200 OK");
-        echo json_encode($sql->fetchAll(PDO::FETCH_ASSOC));
-        exit();
-    }
+        // Validar credenciales
+        autenticarUsuario($conexion, $datos, [1, 4, 6]);
 
-    //En caso de que la petición GET falle
+        //En caso de especificarse un id
+        if (isset($_GET['id'])) {
+            //Ej --> http://localhost/API/src/controllers/Reserva.php?id=1 / http://localhost/API/reservas/1
+            $sql = $conexion->prepare('SELECT * FROM reservas WHERE id = :id');
+            $sql->bindValue(':id', $_GET['id']);
+            $sql->execute();
+            $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+
+            //Si no se encuentra la reserva con ese id
+            if (!$resultado) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Reserva no existente']);
+                exit();
+            }
+
+            http_response_code(200);
+            echo json_encode($resultado);
+            exit();
+        }
+
+        //En caso de que la petición GET falle
     } catch (PDOException $e) {
-        header("HTTP/1.1 500 Internal Server Error");
-        echo json_encode(['error' => 'Error al obtener la/las Reserva/s']);
+        http_response_code(500);
+        echo json_encode(['error' => 'Error interno del servidor']);
         exit();
     }
-
-   
 }
 
 //PETICIÓN DELETE
-if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
+//EJ --> 
+/*
+
+http://localhost/API/reservas/2 //Petición con id y credenciales del admin para poder eliminar
+
+{
+  "usuario": {
+    "usuario": "admin",
+    "contrasena": "2DawAp1"
+  }
+}
+*/
+if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
 
     try {
-         //En caso de especificarse un id
+
+        $datos = json_decode(file_get_contents("php://input"), true);
+
+        // Validar credenciales
+        autenticarUsuario($conexion, $datos, [1, 4, 6]);
+
+        //En caso de especificarse un id
         if (isset($_GET['id'])) {
-            
+
+            //Verificar si la reserva existe antes de eliminarla
+            $verificar = $conexion->prepare('SELECT id FROM reservas WHERE id = :id');
+            $verificar->bindValue(':id', $_GET['id']);
+            $verificar->execute();
+
+            if (!$verificar->fetch()) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Reserva no existente']);
+                exit();
+            }
+
             $sql = $conexion->prepare('DELETE FROM reservas WHERE id = :id');
             $sql->bindValue(':id', $_GET['id']);
             $sql->execute();
 
-            header("HTTP/1.1 200 OK");
-             echo json_encode(['La Reserva con el id ' . $_GET['id'] . ' ha sido eliminada']);
+            http_response_code(200);
+            echo json_encode(['mensaje' => 'La Reserva con el id ' . $_GET['id'] . ' ha sido eliminada']);
             exit();
 
-        //En caso de querer borrar a TODAS las Reservas
-        //Ej --> http://localhost/API/src/controllers/Reserva.php?all=true
-        } elseif (isset($_GET['all']) && $_GET['all'] == 'true') {
+            //En caso de querer borrar a TODAS las Reservas
+            //Ej --> http://localhost/API/src/controllers/Reserva.php?all=true
+        } elseif (isset($_GET['all']) && $_GET['all'] === 'true') {
 
             $sql = $conexion->prepare('DELETE FROM reservas');
             $sql->execute();
 
-            header("HTTP/1.1 200 OK");
-            echo json_encode(['TODAS las Reservas han sido eliminadas']);
+            http_response_code(200);
+            echo json_encode(['mensaje' => 'TODAS las Reservas han sido eliminadas']);
             exit();
-
         } else {
             //Si no se especifica si son todas o una en concreto, se informará para evitar borrados por error
             //Ej --> http://localhost/API/src/controllers/Reserva.php
-            header("HTTP/1.1 400 Bad Request");
+            http_response_code(400);
             echo json_encode(['error' => 'Se requiere id o all=true para borrar']);
             exit();
         }
         //En caso de que falle la petición, se informará
     } catch (PDOException $e) {
-        header("HTTP/1.1 500 Internal Server Error");
-        echo json_encode(['error' => 'Error al eliminar la Reserva']);
+        http_response_code(500);
+        echo json_encode(['error' => 'Error interno del servidor']);
         exit();
     }
-
 }
 
 // PETICION POST
@@ -219,13 +250,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'id' => $conexion->lastInsertId()
         ]);
         exit();
-
     } catch (PDOException $e) {
         http_response_code(500);
         echo json_encode(['error' => 'Error interno del servidor']);
         exit();
     }
 }
-
-
-?>

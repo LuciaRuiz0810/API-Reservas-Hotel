@@ -1,7 +1,11 @@
-# Redirige todas las URLs que NO sean archivos físicos hacia index.php, permitiendo que tengas URLs limpias como /users/5 en lugar de /index.php?ruta=users&id=5.
+
+# Este archivo redirige todas las URLs que NO sean archivos o directorios reales
+# hacia index.php, permitiendo URLs limpias como /clientes/5
+
+#De esta manera, aunque cambiaran los nombres de los archivos, las URLs actuales se podrían escribir igual ya que están definidas en index.php
 
 
-# Activar motor de reescritura
+#Activar motor de reescritura
 RewriteEngine On
 
 # Si no es archivo ni directorio, redirigir a index.php

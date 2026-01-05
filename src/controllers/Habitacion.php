@@ -9,79 +9,110 @@ include(__DIR__ . '/../config/utils.php');
 $conexion = connect($db);
 
 //PETICIÓN GET  
-if ($_SERVER['REQUEST_METHOD'] == 'GET'){
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
-    try{
- //En caso de especificarse un id
-    if(isset($_GET['id'])){
-        //Ej --> http://localhost/API/src/controllers/Habitacion.php?id=1 / http://localhost/API/habitaciones/1
-        $sql = $conexion->prepare('SELECT * FROM habitaciones where id=:id');
-        $sql -> bindValue(':id' , $_GET['id']);
-        $sql->execute();
-        header("HTTP/1.1 200 OK");
-        echo json_encode($sql -> fetch(PDO::FETCH_ASSOC));
-        exit();
+    try {
+          $datos = json_decode(file_get_contents("php://input"), true);
 
-    //En caso de querer listar a todos las habitaciones
-    }else{
+        // Validar credenciales
+        autenticarUsuario($conexion, $datos, [1, 4, 6]);
 
-        $sql = $conexion->prepare('SELECT * FROM habitaciones');
-        $sql->execute();
-        header("HTTP/1.1 200 OK");
-        echo json_encode($sql->fetchAll(PDO::FETCH_ASSOC));
-        exit();
-    }
+        //En caso de especificarse un id
+        if (isset($_GET['id'])) {
+            //Ej --> http://localhost/API/src/controllers/Habitacion.php?id=1 / http://localhost/API/habitaciones/1
+            $sql = $conexion->prepare('SELECT * FROM habitaciones WHERE id = :id');
+            $sql->bindValue(':id', $_GET['id']);
+            $sql->execute();
+            $resultado = $sql->fetch(PDO::FETCH_ASSOC);
 
-    //En caso de que la petición GET falle
+            //Si no se encuentra la habitación con ese id
+            if (!$resultado) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Habitación no existente']);
+                exit();
+            }
+
+            http_response_code(200);
+            echo json_encode($resultado);
+            exit();
+        }
+
+        //En caso de que la petición GET falle
     } catch (PDOException $e) {
-        header("HTTP/1.1 500 Internal Server Error");
-        echo json_encode(['error' => 'Error al obtener la/las habitacion/es']);
+        http_response_code(500);
+        echo json_encode(['error' => 'Error interno del servidor']);
         exit();
     }
-
-   
 }
 
 //PETICIÓN DELETE
-if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
+
+//EJ --> 
+/*
+
+http://localhost/API/habitaciones/1 //Petición con id y credenciales del admin para poder eliminar
+
+{
+  "usuario": {
+    "usuario": "admin",
+    "contrasena": "2DawAp1"
+  }
+}
+*/
+if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
 
     try {
-         //En caso de especificarse un id
+
+        $datos = json_decode(file_get_contents("php://input"), true);
+
+        // Validar credenciales
+        autenticarUsuario($conexion, $datos, [1, 4, 6]);
+
+        //En caso de especificarse un id
         if (isset($_GET['id'])) {
-            
+
+            //Verificar si la habitación existe antes de eliminarla
+            $verificar = $conexion->prepare('SELECT id FROM habitaciones WHERE id = :id');
+            $verificar->bindValue(':id', $_GET['id']);
+            $verificar->execute();
+
+            if (!$verificar->fetch()) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Habitación no existente']);
+                exit();
+            }
+
             $sql = $conexion->prepare('DELETE FROM habitaciones WHERE id = :id');
             $sql->bindValue(':id', $_GET['id']);
             $sql->execute();
 
-            header("HTTP/1.1 200 OK");
-             echo json_encode(['La habitacion con el id ' . $_GET['id'] . ' ha sido eliminada']);
+            http_response_code(200);
+            echo json_encode(['mensaje' => 'La habitacion con el id ' . $_GET['id'] . ' ha sido eliminada']);
             exit();
 
-        //En caso de querer borrar a TODAS las Habitaciones
-        //Ej --> http://localhost/API/src/controllers/Habitaciones.php?all=true
-        } elseif (isset($_GET['all']) && $_GET['all'] == 'true') {
+            //En caso de querer borrar a TODAS las Habitaciones
+            //Ej --> http://localhost/API/src/controllers/Habitaciones.php?all=true
+        } elseif (isset($_GET['all']) && $_GET['all'] === 'true') {
 
             $sql = $conexion->prepare('DELETE FROM habitaciones');
             $sql->execute();
 
-            header("HTTP/1.1 200 OK");
-            echo json_encode(['TODAS las habitaciones han sido eliminadas']);
+            http_response_code(200);
+            echo json_encode(['mensaje' => 'TODAS las habitaciones han sido eliminadas']);
             exit();
-
         } else {
             //Si no se especifica si son todas o una en concreto, se informará para evitar borrados por error
             //Ej --> http://localhost/API/src/controllers/Habitaciones.php
-            header("HTTP/1.1 400 Bad Request");
+            http_response_code(400);
             echo json_encode(['error' => 'Se requiere id o all=true para borrar']);
             exit();
         }
         //En caso de que falle la petición, se informará
     } catch (PDOException $e) {
-        header("HTTP/1.1 500 Internal Server Error");
-        echo json_encode(['error' => 'Error al eliminar la habitacion']);
+        http_response_code(500);
+        echo json_encode(['error' => 'Error interno del servidor']);
         exit();
     }
-
 }
 
 
@@ -132,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     try {
         $datos = json_decode(file_get_contents("php://input"), true);
 
-        autenticarUsuario($conexion, $datos, [1,4,6]);
+        autenticarUsuario($conexion, $datos, [1, 4, 6]);
 
         // Validar datos del cliente
         if (
@@ -153,7 +184,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         //Comprobamos si quiere ir añadiendo las habitaciones de una en una o por plantas de manera generica
         if ($datos['opcion']['n'] == 1) {
-           //insertar valores manera individual
+            //insertar valores manera individual
             $sql = $conexion->prepare(
                 'INSERT INTO habitaciones (numero, planta, tipo, precio, suite, num_personas)
                 VALUES (:numero, :planta, :tipo, :precio, :suite, :num_personas)'
@@ -173,7 +204,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'mensaje' => 'Habitacion creada correctamente',
                 'id' => $conexion->lastInsertId()
             ]);
-            exit(); 
+            exit();
         } else {
             if (
                 empty($datos['habitacion']['n_habitaciones'])
@@ -189,15 +220,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 VALUES (:numero, :planta, :tipo, :precio, :suite, :num_personas)'
             );
 
-            for ($i=$habitacion['numero']; $i < ($habitacion['n_habitaciones']+$habitacion['numero']) ; $i++) { 
-            $sql->bindValue(':numero', $i);
-            $sql->bindValue(':planta', $habitacion['planta']);
-            $sql->bindValue(':tipo', $habitacion['tipo']);
-            $sql->bindValue(':precio', $habitacion['precio']);
-            $sql->bindValue(':suite', $habitacion['suite'] ?? null);
-            $sql->bindValue(':num_personas', $habitacion['num_personas'] ?? null);
+            for ($i = $habitacion['numero']; $i < ($habitacion['n_habitaciones'] + $habitacion['numero']); $i++) {
+                $sql->bindValue(':numero', $i);
+                $sql->bindValue(':planta', $habitacion['planta']);
+                $sql->bindValue(':tipo', $habitacion['tipo']);
+                $sql->bindValue(':precio', $habitacion['precio']);
+                $sql->bindValue(':suite', $habitacion['suite'] ?? null);
+                $sql->bindValue(':num_personas', $habitacion['num_personas'] ?? null);
 
-            $sql->execute();
+                $sql->execute();
             }
 
             http_response_code(201);
@@ -205,19 +236,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'mensaje' => 'Habitaciones creadas correctamente',
                 'total' => $habitacion['n_habitaciones']
             ]);
-            exit(); 
+            exit();
         }
-
-        
-
     } catch (PDOException $e) {
         http_response_code(500);
         echo json_encode(['error' => 'Error interno del servidor']);
         exit();
     }
 }
-
-
-
-
-?>

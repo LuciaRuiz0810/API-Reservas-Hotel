@@ -9,17 +9,35 @@ include(__DIR__ . '/../config/utils.php');
 $conexion = connect($db);
 
 //PETICIÓN GET  
-if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     try {
+        
+         //Array de credenciales de sesión para verificar que el usuario tiene permisos
+          $datos = json_decode(file_get_contents("php://input"), true);
+
+        
+        //Validar credenciales (rangos con privilegios -> 1,4,6)
+        autenticarUsuario($conexion, $datos, [1, 4, 6]);
+
         //En caso de especificarse un id
         if (isset($_GET['id'])) {
             //Ej --> http://localhost/API/src/controllers/Cliente.php?id=1 / http://localhost/API/clientes/1
-            $sql = $conexion->prepare('SELECT * FROM clientes where id=:id');
+            $sql = $conexion->prepare('SELECT * FROM clientes WHERE id = :id');
             $sql->bindValue(':id', $_GET['id']);
             $sql->execute();
-            header("HTTP/1.1 200 OK");
-            echo json_encode($sql->fetch(PDO::FETCH_ASSOC));
+
+            $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+
+            //Si no se encuentra el cliente con ese id
+            if (!$resultado) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Cliente no existente']);
+                exit();
+            }
+
+            http_response_code(200);
+            echo json_encode($resultado);
             exit();
 
             //En caso de querer listar a todos los clientes
@@ -27,63 +45,89 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
             $sql = $conexion->prepare('SELECT * FROM clientes');
             $sql->execute();
-            header("HTTP/1.1 200 OK");
+            http_response_code(200);
             echo json_encode($sql->fetchAll(PDO::FETCH_ASSOC));
             exit();
         }
 
         //En caso de que la petición GET falle
     } catch (PDOException $e) {
-        header("HTTP/1.1 500 Internal Server Error");
-        echo json_encode(['error' => 'Error al obtener el/los cliente/s']);
+        http_response_code(500);
+        echo json_encode(['error' => 'Error interno del servidor']);
         exit();
     }
-
-
 }
 
 //PETICIÓN DELETE
-if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
+//EJ --> 
+/*
+
+http://localhost/API/clientes/1 //Petición con id y credenciales del admin para poder eliminar
+
+{
+  "usuario": {
+    "usuario": "admin",
+    "contrasena": "2DawAp1"
+  }
+}
+*/
+if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
 
     try {
+
+        //Array de credenciales de sesión para verificar que el usuario tiene permisos
+        $datos = json_decode(file_get_contents("php://input"), true);
+
+        //Validar credenciales (rangos con privilegios -> 1,4,6)
+        autenticarUsuario($conexion, $datos, [1, 4, 6]);
+
         //En caso de especificarse un id
+        //Ej --> http://localhost/API/clientes/1
         if (isset($_GET['id'])) {
+
+            //Verificar si el cliente existe antes de eliminarlo
+            $verificar = $conexion->prepare('SELECT id FROM clientes WHERE id = :id');
+            $verificar->bindValue(':id', $_GET['id']);
+            $verificar->execute();
+
+            if (!$verificar->fetch()) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Cliente no existente']);
+                exit();
+            }
 
             $sql = $conexion->prepare('DELETE FROM clientes WHERE id = :id');
             $sql->bindValue(':id', $_GET['id']);
             $sql->execute();
 
-            header("HTTP/1.1 200 OK");
-            echo json_encode(['El cliente con el id ' . $_GET['id'] . ' ha sido eliminado']);
+            http_response_code(200);
+            echo json_encode(['mensaje' => 'El cliente con el id ' . $_GET['id'] . ' ha sido eliminado']);
             exit();
 
             //En caso de querer borrar a TODOS los clientes
             //Ej --> http://localhost/API/src/controllers/Cliente.php?all=true
-        } elseif (isset($_GET['all']) && $_GET['all'] == 'true') {
+        } elseif (isset($_GET['all']) && $_GET['all'] === 'true') {
 
             $sql = $conexion->prepare('DELETE FROM clientes');
             $sql->execute();
 
-            header("HTTP/1.1 200 OK");
-            echo json_encode(['TODOS los clientes han sido eliminados']);
+            http_response_code(200);
+            echo json_encode(['mensaje' => 'TODOS los clientes han sido eliminados']);
             exit();
-
         } else {
             //Si no se especifica si son todos o uno en concreto, se informará para evitar borrados por error
             //Ej --> http://localhost/API/src/controllers/Cliente.php
-            header("HTTP/1.1 400 Bad Request");
+            http_response_code(400);
             echo json_encode(['error' => 'Se requiere id o all=true para borrar']);
             exit();
         }
         //En caso de que falle la petición, se informará
     } catch (PDOException $e) {
-        header("HTTP/1.1 500 Internal Server Error");
-        echo json_encode(['error' => 'Error al eliminar el cliente']);
+        http_response_code(500);
+        echo json_encode(['error' => 'Error interno del servidor']);
         exit();
     }
-
 }
-
 
 //Peticion POST
 
@@ -172,14 +216,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'id' => $conexion->lastInsertId()
         ]);
         exit();
-
     } catch (PDOException $e) {
         http_response_code(500);
         echo json_encode(['error' => 'Error interno del servidor']);
         exit();
     }
 }
-
-
-
-?>
