@@ -240,3 +240,96 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit();
     }
 }
+
+//PETICIÓN PUT
+/**
+ * PUT /habitaciones?id=1
+ *
+ * {
+ *   "usuario": {
+ *     "usuario": "admin",
+ *     "contrasena": "2DawAp1"
+ *   },
+ *   "habitacion": {
+ *     "numero": "101",
+ *     "planta": "1",
+ *     "tipo": "Doble",
+ *     "precio": "150",
+ *     "suite": "0",
+ *     "num_personas": "2"
+ *   }
+ * }
+ */
+
+ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+
+    try {
+
+        $datos = json_decode(file_get_contents("php://input"), true);
+
+        //Autenticación
+        autenticarUsuario($conexion, $datos, [1, 4, 6]);
+
+        //Verificar que se especifique un id
+        if (!isset($_GET['id'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Se requiere un id para actualizar']);
+            exit();
+        }
+
+        //Verificar si la habitación existe
+        $verificar = $conexion->prepare('SELECT * FROM habitaciones WHERE id = :id');
+        $verificar->bindValue(':id', $_GET['id']);
+        $verificar->execute();
+        $habitacionExistente = $verificar->fetch(PDO::FETCH_ASSOC);
+
+        if (!$habitacionExistente) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Habitación no existente']);
+            exit();
+        }
+
+        // Obtener datos actualizados o mantener los existentes
+        $habitacion = $datos['habitacion'] ?? [];
+        $numero = $habitacion['numero'] ?? $habitacionExistente['numero'];
+        $planta = $habitacion['planta'] ?? $habitacionExistente['planta'];
+        $tipo = $habitacion['tipo'] ?? $habitacionExistente['tipo'];
+        $precio = $habitacion['precio'] ?? $habitacionExistente['precio'];
+        $suite = $habitacion['suite'] ?? $habitacionExistente['suite'];
+        $num_personas = $habitacion['num_personas'] ?? $habitacionExistente['num_personas'];
+
+        // Actualizar habitación
+        $sql = $conexion->prepare(
+            'UPDATE habitaciones 
+            SET numero = :numero,
+                planta = :planta,
+                tipo = :tipo,
+                precio = :precio,
+                suite = :suite,
+                num_personas = :num_personas
+            WHERE id = :id'
+        );
+
+        $sql->bindValue(':numero', $numero);
+        $sql->bindValue(':planta', $planta);
+        $sql->bindValue(':tipo', $tipo);
+        $sql->bindValue(':precio', $precio);
+        $sql->bindValue(':suite', $suite);
+        $sql->bindValue(':num_personas', $num_personas);
+        $sql->bindValue(':id', $_GET['id'], PDO::PARAM_INT);
+
+        $sql->execute();
+
+        http_response_code(200);
+        echo json_encode([
+            'mensaje' => 'Habitación actualizada correctamente',
+            'id' => $_GET['id']
+        ]);
+        exit();
+
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Error interno del servidor']);
+        exit();
+    }
+}

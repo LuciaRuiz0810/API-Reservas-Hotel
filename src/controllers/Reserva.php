@@ -251,3 +251,163 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 }
+
+
+//PETICIÓN PUT
+/**
+ * PUT /reservas?id=1
+ *
+ * {
+ *   "usuario": {
+ *     "usuario": "admin",
+ *     "contrasena": "2DawAp1"
+ *   },
+ *   "reserva": {
+ *     "cliente_id": 1,
+ *     "habitacion_id": 3,
+ *     "fecha_entrada": "2026-01-12",
+ *     "fecha_salida": "2026-01-18",
+ *     "estado": "activa"
+ *   }
+ * }
+ */
+
+ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+
+    try {
+
+        $datos = json_decode(file_get_contents("php://input"), true);
+
+        //Autenticación
+        $usuario = autenticarUsuario($conexion, $datos, [1, 4, 6]);
+
+        //Verificar que se especifique un id
+        if (!isset($_GET['id'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Se requiere un id para actualizar']);
+            exit();
+        }
+
+        //Verificar si la reserva existe
+        $verificar = $conexion->prepare('SELECT * FROM reservas WHERE id = :id');
+        $verificar->bindValue(':id', $_GET['id']);
+        $verificar->execute();
+        $reservaExistente = $verificar->fetch(PDO::FETCH_ASSOC);
+
+        if (!$reservaExistente) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Reserva no existente']);
+            exit();
+        }
+
+        // Obtener datos actualizados o mantener los existentes
+        $reserva = $datos['reserva'] ?? [];
+        $cliente_id = $reserva['cliente_id'] ?? $reservaExistente['cliente_id'];
+        $habitacion_id = $reserva['habitacion_id'] ?? $reservaExistente['habitacion_id'];
+        $fecha_entrada = $reserva['fecha_entrada'] ?? $reservaExistente['fecha_entrada'];
+        $fecha_salida = $reserva['fecha_salida'] ?? $reservaExistente['fecha_salida'];
+        $estado = $reserva['estado'] ?? $reservaExistente['estado'];
+
+        // Validar fechas
+        $fechaEntrada = new DateTime($fecha_entrada);
+        $fechaSalida = new DateTime($fecha_salida);
+
+        if ($fechaSalida <= $fechaEntrada) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'La fecha de salida debe ser posterior a la de entrada'
+            ]);
+            exit();
+        }
+
+        // Comprobar cliente
+        $sqlCliente = $conexion->prepare('SELECT id FROM clientes WHERE id = :id');
+        $sqlCliente->bindValue(':id', $cliente_id, PDO::PARAM_INT);
+        $sqlCliente->execute();
+
+        if (!$sqlCliente->fetch()) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Cliente no existe']);
+            exit();
+        }
+
+        // Comprobar habitación y obtener precio
+        $sqlHabitacion = $conexion->prepare('SELECT precio FROM habitaciones WHERE id = :id');
+        $sqlHabitacion->bindValue(':id', $habitacion_id, PDO::PARAM_INT);
+        $sqlHabitacion->execute();
+
+        $habitacion = $sqlHabitacion->fetch(PDO::FETCH_ASSOC);
+
+        if (!$habitacion) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Habitacion no existe']);
+            exit();
+        }
+
+        // Comprobar disponibilidad (excluyendo la reserva actual)
+        $sqlDisponibilidad = $conexion->prepare(
+            'SELECT id FROM reservas
+             WHERE habitacion_id = :habitacion
+             AND estado = "activa"
+             AND id != :reserva_id
+             AND fecha_entrada < :fecha_salida
+             AND fecha_salida > :fecha_entrada'
+        );
+
+        $sqlDisponibilidad->bindValue(':habitacion', $habitacion_id, PDO::PARAM_INT);
+        $sqlDisponibilidad->bindValue(':reserva_id', $_GET['id'], PDO::PARAM_INT);
+        $sqlDisponibilidad->bindValue(':fecha_entrada', $fecha_entrada);
+        $sqlDisponibilidad->bindValue(':fecha_salida', $fecha_salida);
+        $sqlDisponibilidad->execute();
+
+        if ($sqlDisponibilidad->fetch()) {
+            http_response_code(409);
+            echo json_encode([
+                'error' => 'La habitacion no está disponible en esas fechas'
+            ]);
+            exit();
+        }
+
+        // Calcular número de días y precio total
+        $dias = $fechaEntrada->diff($fechaSalida)->days;
+        $precioTotal = $dias * $habitacion['precio'];
+
+        // Actualizar reserva
+        $sql = $conexion->prepare(
+            'UPDATE reservas 
+            SET cliente_id = :cliente,
+                habitacion_id = :habitacion,
+                usuario_id = :usuario,
+                fecha_entrada = :entrada,
+                fecha_salida = :salida,
+                precio_total = :precio,
+                estado = :estado
+            WHERE id = :id'
+        );
+
+        $sql->bindValue(':cliente', $cliente_id, PDO::PARAM_INT);
+        $sql->bindValue(':habitacion', $habitacion_id, PDO::PARAM_INT);
+        $sql->bindValue(':usuario', $usuario['id'], PDO::PARAM_INT);
+        $sql->bindValue(':entrada', $fecha_entrada);
+        $sql->bindValue(':salida', $fecha_salida);
+        $sql->bindValue(':precio', $precioTotal);
+        $sql->bindValue(':estado', $estado);
+        $sql->bindValue(':id', $_GET['id'], PDO::PARAM_INT);
+
+        $sql->execute();
+
+        http_response_code(200);
+        echo json_encode([
+            'mensaje' => 'Reserva actualizada correctamente',
+            'id' => $_GET['id'],
+            'dias' => $dias,
+            'precio_total' => $precioTotal
+        ]);
+        exit();
+
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Error interno del servidor']);
+        exit();
+    }
+}

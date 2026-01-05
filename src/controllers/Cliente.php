@@ -215,3 +215,119 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 }
+
+
+//PETICIÓN PUT
+/**
+ * PUT /clientes?id=1
+ *
+ * {
+ *   "usuario": {
+ *     "usuario": "admin",
+ *     "contrasena": "2DawAp1"
+ *   },
+ *   "cliente": {
+ *     "nombre": "Laura",
+ *     "apellidos": "Martín García",
+ *     "dni": "77889900A",
+ *     "correo": "laura.nueva@email.com",
+ *     "telefono": "622334455"
+ *   }
+ * }
+ */
+
+ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+
+    try {
+
+        $datos = json_decode(file_get_contents("php://input"), true);
+
+        //Autenticación
+        autenticarUsuario($conexion, $datos, [1, 4, 6]);
+
+        //Verificar que se especifique un id
+        if (!isset($_GET['id'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Se requiere un id para actualizar']);
+            exit();
+        }
+
+        //Verificar si el cliente existe
+        $verificar = $conexion->prepare('SELECT * FROM clientes WHERE id = :id');
+        $verificar->bindValue(':id', $_GET['id']);
+        $verificar->execute();
+        $clienteExistente = $verificar->fetch(PDO::FETCH_ASSOC);
+
+        if (!$clienteExistente) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Cliente no existente']);
+            exit();
+        }
+
+        // Obtener datos actualizados o mantener los existentes
+        $cliente = $datos['cliente'] ?? [];
+        $nombre = $cliente['nombre'] ?? $clienteExistente['nombre'];
+        $apellidos = $cliente['apellidos'] ?? $clienteExistente['apellidos'];
+        $dni = $cliente['dni'] ?? $clienteExistente['dni'];
+        $correo = $cliente['correo'] ?? $clienteExistente['correo'];
+        $telefono = $cliente['telefono'] ?? $clienteExistente['telefono'];
+
+        // Verificar DNI duplicado (si se está cambiando)
+        if ($dni !== $clienteExistente['dni']) {
+            $checkDni = $conexion->prepare('SELECT id FROM clientes WHERE dni = :dni');
+            $checkDni->bindValue(':dni', $dni);
+            $checkDni->execute();
+
+            if ($checkDni->fetch()) {
+                http_response_code(409);
+                echo json_encode(['error' => 'El DNI ya existe']);
+                exit();
+            }
+        }
+
+        // Verificar correo duplicado (si se está cambiando)
+        if ($correo !== $clienteExistente['correo']) {
+            $checkCorreo = $conexion->prepare('SELECT id FROM clientes WHERE correo = :correo');
+            $checkCorreo->bindValue(':correo', $correo);
+            $checkCorreo->execute();
+
+            if ($checkCorreo->fetch()) {
+                http_response_code(409);
+                echo json_encode(['error' => 'El correo ya existe']);
+                exit();
+            }
+        }
+
+        // Actualizar cliente
+        $sql = $conexion->prepare(
+            'UPDATE clientes 
+            SET nombre = :nombre,
+                apellidos = :apellidos,
+                dni = :dni,
+                correo = :correo,
+                telefono = :telefono
+            WHERE id = :id'
+        );
+
+        $sql->bindValue(':nombre', $nombre);
+        $sql->bindValue(':apellidos', $apellidos);
+        $sql->bindValue(':dni', $dni);
+        $sql->bindValue(':correo', $correo);
+        $sql->bindValue(':telefono', $telefono);
+        $sql->bindValue(':id', $_GET['id'], PDO::PARAM_INT);
+
+        $sql->execute();
+
+        http_response_code(200);
+        echo json_encode([
+            'mensaje' => 'Cliente actualizado correctamente',
+            'id' => $_GET['id']
+        ]);
+        exit();
+
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Error interno del servidor']);
+        exit();
+    }
+}
