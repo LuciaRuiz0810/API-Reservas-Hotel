@@ -43,7 +43,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             http_response_code(200);
             echo json_encode($resultado);
             exit();
+            
+             //En caso de querer mostrar todas las reservas
+            //Ej --> http://localhost/API/src/controllers/Reserva.php?all=true
+        }else {
+
+            $sql = $conexion->prepare('SELECT * FROM reservas');
+            $sql->execute();
+            http_response_code(200);
+            echo json_encode($sql->fetchAll(PDO::FETCH_ASSOC));
+            exit();
         }
+
 
         //En caso de que la petición GET falle
     } catch (PDOException $e) {
@@ -379,7 +390,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit();
         }
 
-        // ❌ BLOQUEAR SOLAPES
+        // BLOQUEAR SOLAPES
         $sql = $conexion->prepare(
             'SELECT id FROM reservas
              WHERE habitacion_id = :habitacion

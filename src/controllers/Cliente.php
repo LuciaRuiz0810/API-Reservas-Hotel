@@ -34,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             exit();
 
             //En caso de querer listar a todos los clientes
+             //Ej --> http://localhost/API/src/controllers/Cliente.php?all=true
         } else {
 
             $sql = $conexion->prepare('SELECT * FROM clientes');
