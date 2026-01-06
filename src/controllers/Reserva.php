@@ -252,11 +252,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-
 //PETICIÓN PUT
 /**
  * PUT /reservas?id=1
  *
+ * Opción 1: Actualizar datos completos de la reserva
  * {
  *   "usuario": {
  *     "usuario": "admin",
@@ -269,6 +269,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  *     "fecha_salida": "2026-01-18",
  *     "estado": "activa"
  *   }
+ * }
+ *
+ * Opción 2: Solo cancelar la reserva
+ * {
+ *   "usuario": {
+ *     "usuario": "admin",
+ *     "contrasena": "2DawAp1"
+ *   },
+ *   "accion": "cancelar"
  * }
  */
 
@@ -300,6 +309,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit();
         }
 
+        // OPCIÓN 1: CANCELAR RESERVA (acción rápida)
+        if (isset($datos['accion']) && $datos['accion'] === 'cancelar') {
+            
+            // Verificar que la reserva no esté ya cancelada
+            if ($reservaExistente['estado'] === 'cancelada') {
+                http_response_code(400);
+                echo json_encode(['error' => 'La reserva ya está cancelada']);
+                exit();
+            }
+
+            $sql = $conexion->prepare('UPDATE reservas SET estado = "cancelada" WHERE id = :id');
+            $sql->bindValue(':id', $_GET['id'], PDO::PARAM_INT);
+            $sql->execute();
+
+            http_response_code(200);
+            echo json_encode([
+                'mensaje' => 'Reserva cancelada correctamente',
+                'id' => $_GET['id'],
+                'estado' => 'cancelada'
+            ]);
+            exit();
+        }
+
+        // OPCIÓN 2: ACTUALIZAR DATOS DE LA RESERVA (completo)
         // Obtener datos actualizados o mantener los existentes
         $reserva = $datos['reserva'] ?? [];
         $cliente_id = $reserva['cliente_id'] ?? $reservaExistente['cliente_id'];
@@ -307,6 +340,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $fecha_entrada = $reserva['fecha_entrada'] ?? $reservaExistente['fecha_entrada'];
         $fecha_salida = $reserva['fecha_salida'] ?? $reservaExistente['fecha_salida'];
         $estado = $reserva['estado'] ?? $reservaExistente['estado'];
+
+        // Validar que el estado sea válido
+        $estadosValidos = ['activa', 'cancelada', 'completada'];
+        if (!in_array($estado, $estadosValidos)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Estado inválido. Debe ser: activa, cancelada o completada'
+            ]);
+            exit();
+        }
 
         // Validar fechas
         $fechaEntrada = new DateTime($fecha_entrada);
@@ -344,28 +387,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit();
         }
 
-        // Comprobar disponibilidad (excluyendo la reserva actual)
-        $sqlDisponibilidad = $conexion->prepare(
-            'SELECT id FROM reservas
-             WHERE habitacion_id = :habitacion
-             AND estado = "activa"
-             AND id != :reserva_id
-             AND fecha_entrada < :fecha_salida
-             AND fecha_salida > :fecha_entrada'
-        );
+        // Comprobar disponibilidad solo si el estado es "activa"
+        if ($estado === 'activa') {
+            $sqlDisponibilidad = $conexion->prepare(
+                'SELECT id FROM reservas
+                 WHERE habitacion_id = :habitacion
+                 AND estado = "activa"
+                 AND id != :reserva_id
+                 AND fecha_entrada < :fecha_salida
+                 AND fecha_salida > :fecha_entrada'
+            );
 
-        $sqlDisponibilidad->bindValue(':habitacion', $habitacion_id, PDO::PARAM_INT);
-        $sqlDisponibilidad->bindValue(':reserva_id', $_GET['id'], PDO::PARAM_INT);
-        $sqlDisponibilidad->bindValue(':fecha_entrada', $fecha_entrada);
-        $sqlDisponibilidad->bindValue(':fecha_salida', $fecha_salida);
-        $sqlDisponibilidad->execute();
+            $sqlDisponibilidad->bindValue(':habitacion', $habitacion_id, PDO::PARAM_INT);
+            $sqlDisponibilidad->bindValue(':reserva_id', $_GET['id'], PDO::PARAM_INT);
+            $sqlDisponibilidad->bindValue(':fecha_entrada', $fecha_entrada);
+            $sqlDisponibilidad->bindValue(':fecha_salida', $fecha_salida);
+            $sqlDisponibilidad->execute();
 
-        if ($sqlDisponibilidad->fetch()) {
-            http_response_code(409);
-            echo json_encode([
-                'error' => 'La habitacion no está disponible en esas fechas'
-            ]);
-            exit();
+            if ($sqlDisponibilidad->fetch()) {
+                http_response_code(409);
+                echo json_encode([
+                    'error' => 'La habitacion no está disponible en esas fechas'
+                ]);
+                exit();
+            }
         }
 
         // Calcular número de días y precio total
@@ -401,7 +446,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'mensaje' => 'Reserva actualizada correctamente',
             'id' => $_GET['id'],
             'dias' => $dias,
-            'precio_total' => $precioTotal
+            'precio_total' => $precioTotal,
+            'estado' => $estado
         ]);
         exit();
 

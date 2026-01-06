@@ -240,11 +240,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit();
     }
 }
-
 //PETICIÓN PUT
 /**
  * PUT /habitaciones?id=1
  *
+ * Opción 1: Actualizar datos de la habitación
  * {
  *   "usuario": {
  *     "usuario": "admin",
@@ -256,8 +256,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
  *     "tipo": "Doble",
  *     "precio": "150",
  *     "suite": "0",
- *     "num_personas": "2"
+ *     "num_personas": "2",
+ *     "disponible": "1"
  *   }
+ * }
+ *
+ * Opción 2: Solo cambiar disponibilidad
+ * {
+ *   "usuario": {
+ *     "usuario": "admin",
+ *     "contrasena": "2DawAp1"
+ *   },
+ *   "accion": "cambiar_disponibilidad",
+ *   "disponible": "0"
  * }
  */
 
@@ -289,6 +300,39 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             exit();
         }
 
+        // OPCIÓN 1: CAMBIAR SOLO DISPONIBILIDAD (acción rápida)
+        if (isset($datos['accion']) && $datos['accion'] === 'cambiar_disponibilidad') {
+            
+            if (!isset($datos['disponible'])) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Se requiere el campo disponible (0 o 1)']);
+                exit();
+            }
+
+            $disponible = $datos['disponible'];
+
+            // Validar que sea 0 o 1
+            if ($disponible !== '0' && $disponible !== '1' && $disponible !== 0 && $disponible !== 1) {
+                http_response_code(400);
+                echo json_encode(['error' => 'El campo disponible debe ser 0 o 1']);
+                exit();
+            }
+
+            $sql = $conexion->prepare('UPDATE habitaciones SET disponible = :disponible WHERE id = :id');
+            $sql->bindValue(':disponible', $disponible);
+            $sql->bindValue(':id', $_GET['id'], PDO::PARAM_INT);
+            $sql->execute();
+
+            http_response_code(200);
+            echo json_encode([
+                'mensaje' => 'Disponibilidad actualizada correctamente',
+                'id' => $_GET['id'],
+                'disponible' => $disponible == 1 ? 'Sí' : 'No'
+            ]);
+            exit();
+        }
+
+        // OPCIÓN 2: ACTUALIZAR TODOS LOS DATOS DE LA HABITACIÓN
         // Obtener datos actualizados o mantener los existentes
         $habitacion = $datos['habitacion'] ?? [];
         $numero = $habitacion['numero'] ?? $habitacionExistente['numero'];
@@ -297,6 +341,37 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $precio = $habitacion['precio'] ?? $habitacionExistente['precio'];
         $suite = $habitacion['suite'] ?? $habitacionExistente['suite'];
         $num_personas = $habitacion['num_personas'] ?? $habitacionExistente['num_personas'];
+        $disponible = $habitacion['disponible'] ?? $habitacionExistente['disponible'];
+
+        // Validar tipos de habitación válidos (opcional)
+        $tiposValidos = ['Individual', 'Doble', 'Triple', 'Familiar', 'Suite'];
+        if (!in_array($tipo, $tiposValidos)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Tipo de habitación inválido. Debe ser: Individual, Doble, Triple, Familiar o Suite'
+            ]);
+            exit();
+        }
+
+        // Validar que el precio sea positivo
+        if ($precio <= 0) {
+            http_response_code(400);
+            echo json_encode(['error' => 'El precio debe ser mayor que 0']);
+            exit();
+        }
+
+        // Verificar que el número de habitación no esté duplicado (si se está cambiando)
+        if ($numero !== $habitacionExistente['numero']) {
+            $checkNumero = $conexion->prepare('SELECT id FROM habitaciones WHERE numero = :numero');
+            $checkNumero->bindValue(':numero', $numero);
+            $checkNumero->execute();
+
+            if ($checkNumero->fetch()) {
+                http_response_code(409);
+                echo json_encode(['error' => 'El número de habitación ya existe']);
+                exit();
+            }
+        }
 
         // Actualizar habitación
         $sql = $conexion->prepare(
@@ -306,7 +381,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 tipo = :tipo,
                 precio = :precio,
                 suite = :suite,
-                num_personas = :num_personas
+                num_personas = :num_personas,
+                disponible = :disponible
             WHERE id = :id'
         );
 
@@ -316,6 +392,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $sql->bindValue(':precio', $precio);
         $sql->bindValue(':suite', $suite);
         $sql->bindValue(':num_personas', $num_personas);
+        $sql->bindValue(':disponible', $disponible);
         $sql->bindValue(':id', $_GET['id'], PDO::PARAM_INT);
 
         $sql->execute();
@@ -323,7 +400,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         http_response_code(200);
         echo json_encode([
             'mensaje' => 'Habitación actualizada correctamente',
-            'id' => $_GET['id']
+            'id' => $_GET['id'],
+            'disponible' => $disponible == 1 ? 'Sí' : 'No'
         ]);
         exit();
 

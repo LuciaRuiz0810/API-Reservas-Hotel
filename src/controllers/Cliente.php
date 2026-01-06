@@ -216,7 +216,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-
 //PETICIÓN PUT
 /**
  * PUT /clientes?id=1
@@ -272,6 +271,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $correo = $cliente['correo'] ?? $clienteExistente['correo'];
         $telefono = $cliente['telefono'] ?? $clienteExistente['telefono'];
 
+        // Validar que los campos obligatorios no estén vacíos
+        if (empty($nombre) || empty($apellidos) || empty($dni) || empty($correo)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Los campos nombre, apellidos, dni y correo son obligatorios']);
+            exit();
+        }
+
+        // Validar formato de DNI (8 números + 1 letra)
+        if (!preg_match('/^[0-9]{8}[A-Za-z]$/', $dni)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Formato de DNI inválido. Debe ser 8 números seguidos de una letra']);
+            exit();
+        }
+
+        // Validar formato de correo electrónico
+        if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Formato de correo electrónico inválido']);
+            exit();
+        }
+
+        // Validar formato de teléfono (opcional, 9 dígitos)
+        if (!empty($telefono) && !preg_match('/^[0-9]{9}$/', $telefono)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Formato de teléfono inválido. Debe tener 9 dígitos']);
+            exit();
+        }
+
         // Verificar DNI duplicado (si se está cambiando)
         if ($dni !== $clienteExistente['dni']) {
             $checkDni = $conexion->prepare('SELECT id FROM clientes WHERE dni = :dni');
@@ -321,7 +348,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         http_response_code(200);
         echo json_encode([
             'mensaje' => 'Cliente actualizado correctamente',
-            'id' => $_GET['id']
+            'id' => $_GET['id'],
+            'nombre_completo' => $nombre . ' ' . $apellidos
         ]);
         exit();
 
