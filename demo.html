@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Reservas Hotel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #f5f1eb 0%, #ede4d3 50%, #e8dcc6 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* PANTALLA DE LOGIN */
+        .login-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-box {
+            background: #fefcf8;
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(139, 122, 96, 0.15);
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+            border: 1px solid #e8dcc6;
+        }
+
+        .login-title {
+            color: #8b7a60;
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            font-weight: 300;
+        }
+
+        .login-subtitle {
+            color: #a69782;
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+            font-style: italic;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .login-input {
+            padding: 18px;
+            border: 2px solid #e8dcc6;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            background: #fefcf8;
+            color: #8b7a60;
+        }
+
+        .login-input:focus {
+            outline: none;
+            border-color: #d4c4a8;
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(139, 122, 96, 0.1);
+        }
+
+        .login-input::placeholder {
+            color: #baa990;
+        }
+
+        .login-btn {
+            background: linear-gradient(135deg, #d4c4a8 0%, #c4b59a 100%);
+            color: #fefcf8;
+            padding: 18px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(139, 122, 96, 0.2);
+            background: linear-gradient(135deg, #c4b59a 0%, #b5a688 100%);
+        }
+
+        .login-error {
+            background: #f4e8e8;
+            color: #a67c7c;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+            display: none;
+            border: 1px solid #e8d0d0;
+        }
+
+        /* APLICACIÓN PRINCIPAL */
+        .app-container {
+            display: none;
+            height: 100vh;
+            background: #fefcf8;
+            flex-direction: column;
+        }
+
+        .app-header {
+            background: linear-gradient(135deg, #d4c4a8 0%, #c4b59a 100%);
+            color: #fefcf8;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            box-shadow: 0 4px 15px rgba(139, 122, 96, 0.1);
+        }
+
+        .app-header h1 {
+            font-weight: 300;
+            font-size: 1.8rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 1rem;
+        }
+
+        .logout-btn {
+            background: rgba(254, 252, 248, 0.2);
+            color: #fefcf8;
+            padding: 10px 18px;
+            border: 2px solid rgba(254, 252, 248, 0.3);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .logout-btn:hover {
+            background: rgba(254, 252, 248, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: #f5f1eb;
+            flex-shrink: 0;
+            border-bottom: 1px solid #e8dcc6;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 20px;
+            background: none;
+            border: none;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #8b7a60;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-family: 'Georgia', serif;
+        }
+
+        .tab-button.active {
+            background: #fefcf8;
+            border-bottom: 3px solid #d4c4a8;
+            color: #8b7a60;
+            transform: translateY(-2px);
+        }
+
+        .tab-button:hover:not(.active) {
+            background: #ede4d3;
+            color: #8b7a60;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tab-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .tab-pane {
+            display: none;
+            height: 100%;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        .operations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+        }
+
+        .operation-card {
+            border: 1px solid #e8dcc6;
+            border-radius: 20px;
+            padding: 30px;
+            background: #fefcf8;
+            box-shadow: 0 8px 25px rgba(139, 122, 96, 0.08);
+            height: fit-content;
+            transition: all 0.3s ease;
+        }
+
+        .operation-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(139, 122, 96, 0.12);
+        }
+
+        .operation-card h3 {
+            color: #8b7a60;
+            margin-bottom: 25px;
+            font-size: 1.4rem;
+            border-bottom: 2px solid #e8dcc6;
+            padding-bottom: 12px;
+            font-weight: 400;
+            font-family: 'Georgia', serif;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #8b7a60;
+            font-size: 1rem;
+        }
+
+        .form-group input, 
+        .form-group select, 
+        .form-group textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e8dcc6;
+            border-radius: 12px;
+            font-size: 1rem;
+            background: #fefcf8;
+            color: #8b7a60;
+            transition: all 0.3s ease;
+            font-family: 'Georgia', serif;
+        }
+
+        .form-group input:focus, 
+        .form-group select:focus, 
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #d4c4a8;
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(139, 122, 96, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #baa990;
+            font-style: italic;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #d4c4a8 0%, #c4b59a 100%);
+            color: #fefcf8;
+            padding: 16px 25px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            width: 100%;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-family: 'Georgia', serif;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(139, 122, 96, 0.15);
+            background: linear-gradient(135deg, #c4b59a 0%, #b5a688 100%);
+        }
+
+        .btn.btn-success { 
+            background: linear-gradient(135deg, #b8c4a3 0%, #a8b493 100%); 
+        }
+        .btn.btn-success:hover { 
+            background: linear-gradient(135deg, #a8b493 0%, #98a483 100%); 
+        }
+        
+        .btn.btn-warning { 
+            background: linear-gradient(135deg, #d4b8a3 0%, #c4a893 100%); 
+        }
+        .btn.btn-warning:hover { 
+            background: linear-gradient(135deg, #c4a893 0%, #b49883 100%); 
+        }
+        
+        .btn.btn-danger { 
+            background: linear-gradient(135deg, #d4a8a3 0%, #c49893 100%); 
+        }
+        .btn.btn-danger:hover { 
+            background: linear-gradient(135deg, #c49893 0%, #b48883 100%); 
+        }
+
+        .response-section {
+            background: #f5f1eb;
+            border: 1px solid #e8dcc6;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .response-content {
+            max-height: 280px;
+            overflow-y: auto;
+            background: #fefcf8;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #e8dcc6;
+        }
+
+        .data-card {
+            background: #f8f5ef;
+            border: 1px solid #e8dcc6;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 4px 15px rgba(139, 122, 96, 0.05);
+        }
+
+        .card-header {
+            font-weight: 500;
+            color: #8b7a60;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e8dcc6;
+            font-family: 'Georgia', serif;
+        }
+
+        .data-row {
+            display: flex;
+            margin: 12px 0;
+            align-items: center;
+            flex-wrap: wrap;
+            font-size: 1rem;
+        }
+
+        .label {
+            font-weight: 600;
+            min-width: 140px;
+            color: #8b7a60;
+            margin-right: 15px;
+            font-size: 0.95rem;
+        }
+
+        .list-header {
+            font-weight: 500;
+            color: #8b7a60;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            font-family: 'Georgia', serif;
+        }
+
+        .success-message {
+            background: linear-gradient(135deg, #e8f5e8 0%, #dceadc 100%);
+            color: #6b8b6b;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            font-weight: 500;
+            border: 1px solid #c4d4c4;
+        }
+
+        .error-message {
+            background: linear-gradient(135deg, #f4e8e8 0%, #e8dede 100%);
+            color: #a67c7c;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            font-weight: 500;
+            border: 1px solid #d4c4c4;
+        }
+
+        .info {
+            margin: 12px 0;
+            color: #8b7a60;
+            font-size: 1rem;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 500;
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+
+        .status.success { 
+            background: linear-gradient(135deg, #e8f5e8 0%, #dceadc 100%); 
+            color: #6b8b6b; 
+            border: 1px solid #c4d4c4;
+        }
+        .status.error { 
+            background: linear-gradient(135deg, #f4e8e8 0%, #e8dede 100%); 
+            color: #a67c7c; 
+            border: 1px solid #d4c4c4;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .status-badge.activa {
+            background: linear-gradient(135deg, #e8f5e8 0%, #dceadc 100%);
+            color: #6b8b6b;
+        }
+
+        .status-badge.cancelada {
+            background: linear-gradient(135deg, #f4e8e8 0%, #e8dede 100%);
+            color: #a67c7c;
+        }
+
+        .status-badge.completada {
+            background: linear-gradient(135deg, #e8f0f8 0%, #dce4ec 100%);
+            color: #6b7c8b;
+        }
+
+        .loading {
+            text-align: center;
+            color: #8b7a60;
+            display: none;
+            margin: 15px 0;
+            font-size: 1.1rem;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .operations-grid {
+                grid-template-columns: 1fr;
+            }
+            .tab-content {
+                padding: 15px;
+            }
+            .nav-tabs {
+                flex-direction: column;
+            }
+            .data-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .label {
+                min-width: auto;
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- PANTALLA DE LOGIN -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-box">
+            <h1 class="login-title">🏨 Hotel Admin</h1>
+            <p class="login-subtitle">Sistema de Gestión Hotelera</p>
+            
+            <form class="login-form" onsubmit="login(event)">
+                <input type="text" id="username" class="login-input" placeholder="Usuario" required>
+                <input type="password" id="password" class="login-input" placeholder="Contraseña" required>
+                <button type="submit" class="login-btn">Iniciar Sesión</button>
+            </form>
+            
+            <div id="loginError" class="login-error">
+                Usuario o contraseña incorrectos
+            </div>
+            
+            <div style="margin-top: 25px; padding: 20px; background: linear-gradient(135deg, #f5f1eb 0%, #ede4d3 100%); border-radius: 15px; font-size: 1rem; color: #8b7a60; border: 1px solid #e8dcc6;">
+                <strong>✨ Credenciales de acceso:</strong><br><br>
+                👤 Usuario: <code style="background: #fefcf8; padding: 4px 8px; border-radius: 8px; color: #8b7a60; font-family: Georgia;">admin</code><br><br>
+                🔑 Contraseña: <code style="background: #fefcf8; padding: 4px 8px; border-radius: 8px; color: #8b7a60; font-family: Georgia;">2DawAp1</code>
+            </div>
+        </div>
+    </div>
+
+    <!-- APLICACIÓN PRINCIPAL -->
+    <div id="appScreen" class="app-container">
+        <div class="app-header">
+            <h1>🏨 Sistema de Reservas Hotel</h1>
+            <div class="user-info">
+                <span>👤 Bienvenido, <strong id="currentUser">Admin</strong></span>
+                <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="tab-button active" onclick="showTab('clientes')">👥 Clientes</button>
+            <button class="tab-button" onclick="showTab('habitaciones')">🏠 Habitaciones</button>
+            <button class="tab-button" onclick="showTab('reservas')">📅 Reservas</button>
+        </div>
+
+        <div class="main-content">
+            <div class="tab-content">
+                <!-- Tab Clientes -->
+                <div id="clientes" class="tab-pane active">
+                    <div class="operations-grid">
+                        <!-- Listar Clientes -->
+                        <div class="operation-card">
+                            <h3>📋 Listar Clientes</h3>
+                            <button class="btn btn-success" onclick="listarClientes()">Ver Todos los Clientes</button>
+                            <div class="loading" id="listarClientesLoading">Cargando...</div>
+                            <div class="response-section" id="listarClientesResponse">
+                                <div class="response-content" id="listarClientesContent"></div>
+                            </div>
+                        </div>
+
+                        <!-- Buscar Cliente -->
+                        <div class="operation-card">
+                            <h3>🔍 Buscar Cliente</h3>
+                            <div class="form-group">
+                                <label>ID del Cliente:</label>
+                                <input type="number" id="buscarClienteId" placeholder="Ejemplo: 1">
+                            </div>
+                            <button class="btn" onclick="buscarCliente()">Buscar Cliente</button>
+                            <div class="loading" id="buscarClienteLoading">Buscando...</div>
+                            <div class="response-section" id="buscarClienteResponse">
+                                <div class="response-content" id="buscarClienteContent"></div>
+                            </div>
+                        </div>
+
+                        <!-- Crear Cliente -->
+                        <div class="operation-card">
+                            <h3>➕ Crear Nuevo Cliente</h3>
+                            <div class="form-group">
+                                <label>Nombre:</label>
+                                <input type="text" id="crearClienteNombre" placeholder="Juan">
+                            </div>
+                            <div class="form-group">
+                                <label>Apellidos:</label>
+                                <input type="text" id="crearClienteApellidos" placeholder="Pérez García">
+                            </div>
+                            <div class="form-group">
+                                <label>DNI:</label>
+                                <input type="text" id="crearClienteDni" placeholder="12345678A">
+                            </div>
+                            <div class="form-group">
+                                <label>Correo:</label>
+                                <input type="email" id="crearClienteCorreo" placeholder="juan@email.com">
+                            </div>
+                            <div class="form-group">
+                                <label>Teléfono:</label>
+                                <input type="tel" id="crearClienteTelefono" placeholder="612345678">
+                            </div>
+                            <button class="btn btn-success" onclick="crearCliente()">Crear Cliente</button>
+                            <div class="loading" id="crearClienteLoading">Creando...</div>
+                            <div class="response-section" id="crearClienteResponse">
+                                <div class="response-content" id="crearClienteContent"></div>
+                            </div>
+                        </div>
+
+                        <!-- Gestionar Cliente -->
+                        <div class="operation-card">
+                            <h3>⚙️ Gestionar Cliente</h3>
+                            
+                            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 25px; margin-bottom: 20px;">
+                                <!-- Actualizar -->
+                                <div>
+                                    <h4 style="color: #8b7a60; margin-bottom: 15px; font-size: 1.1rem;">✏️ Actualizar</h4>
+                                    <div class="form-group">
+                                        <label>ID del Cliente:</label>
+                                        <input type="number" id="updateClienteId" placeholder="1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Nuevo Nombre:</label>
+                                        <input type="text" id="updateClienteNombre" placeholder="Nuevo nombre">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Nuevos Apellidos:</label>
+                                        <input type="text" id="updateClienteApellidos" placeholder="Nuevos apellidos">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Nuevo Correo:</label>
+                                        <input type="email" id="updateClienteCorreo" placeholder="nuevo@email.com">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Nuevo Teléfono:</label>
+                                        <input type="tel" id="updateClienteTelefono" placeholder="987654321">
+                                    </div>
+                                    <button class="btn btn-warning" onclick="actualizarCliente()">Actualizar Cliente</button>
+                                    <div class="loading" id="updateClienteLoading">Actualizando...</div>
+                                </div>
+                                
+                                <!-- Eliminar -->
+                                <div>
+                                    <h4 style="color: #8b7a60; margin-bottom: 15px; font-size: 1.1rem;">🗑️ Eliminar</h4>
+                                    <div class="form-group">
+                                        <label>ID del Cliente:</label>
+                                        <input type="number" id="deleteClienteId" placeholder="1">
+                                    </div>
+                                    <button class="btn btn-danger" onclick="eliminarCliente()">Eliminar Cliente</button>
+                                    <div class="loading" id="deleteClienteLoading">Eliminando...</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Respuestas -->
+                            <div class="response-section" id="updateClienteResponse">
+                                <h5 style="color: #8b7a60; margin-bottom: 10px;">Resultado - Actualizar:</h5>
+                                <div class="response-content" id="updateClienteContent"></div>
+                            </div>
+                            
+                            <div class="response-section" id="deleteClienteResponse">
+                                <h5 style="color: #8b7a60; margin-bottom: 10px;">Resultado - Eliminar:</h5>
+                                <div class="response-content" id="deleteClienteContent"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Habitaciones -->
+                <div id="habitaciones" class="tab-pane">
+                    <div class="operations-grid">
+                        <!-- Buscar Habitación -->
+                        <div class="operation-card">
+                            <h3>🔍 Buscar Habitación</h3>
+                            <div class="form-group">
+                                <label>ID de la Habitación:</label>
+                                <input type="number" id="buscarHabitacionId" placeholder="1">
+                            </div>
+                            <button class="btn" onclick="buscarHabitacion()">Buscar Habitación</button>
+                            <div class="loading" id="buscarHabitacionLoading">Buscando...</div>
+                            <div class="response-section" id="buscarHabitacionResponse">
+                                <div class="response-content" id="buscarHabitacionContent"></div>
+                            </div>
+                        </div>
+
+                        <!-- Crear Habitación -->
+                        <div class="operation-card">
+                            <h3>➕ Crear Habitación</h3>
+                            <div class="form-group">
+                                <label>Número de Habitación:</label>
+                                <input type="number" id="crearHabitacionNumero" placeholder="101">
+                            </div>
+                            <div class="form-group">
+                                <label>Planta:</label>
+                                <input type="number" id="crearHabitacionPlanta" placeholder="1">
+                            </div>
+                            <div class="form-group">
+                                <label>Tipo de Habitación:</label>
+                                <select id="crearHabitacionTipo">
+                                    <option value="Individual">Individual</option>
+                                    <option value="Doble">Doble</option>
+                                    <option value="Triple">Triple</option>
+                                    <option value="Familiar">Familiar</option>
+                                    <option value="Suite">Suite</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Precio por Noche:</label>
+                                <input type="number" id="crearHabitacionPrecio" placeholder="150">
+                            </div>
+                            <div class="form-group">
+                                <label>Número de Personas:</label>
+                                <input type="number" id="crearHabitacionPersonas" placeholder="2">
+                            </div>
+                            <div class="form-group">
+                                <label>¿Es Suite?</label>
+                                <select id="crearHabitacionSuite">
+                                    <option value="0">No</option>
+                                    <option value="1">Sí</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-success" onclick="crearHabitacion()">Crear Habitación</button>
+                            <div class="loading" id="crearHabitacionLoading">Creando...</div>
+                            <div class="response-section" id="crearHabitacionResponse">
+                                <div class="response-content" id="crearHabitacionContent"></div>
+                            </div>
+                        </div>
+
+                        <!-- Actualizar Habitación -->
+                        <div class="operation-card">
+                            <h3>✏️ Actualizar Habitación</h3>
+                            <div class="form-group">
+                                <label>ID de la Habitación:</label>
+                                <input type="number" id="updateHabitacionId" placeholder="1" onblur="cargarDatosHabitacion()">
+                            </div>
+                            <div class="loading" id="loadingHabitacionData" style="margin: 10px 0;">Cargando datos...</div>
+                            
+                            <div class="form-group">
+                                <label>Número:</label>
+                                <input type="number" id="updateHabitacionNumero" placeholder="101">
+                            </div>
+                            <div class="form-group">
+                                <label>Planta:</label>
+                                <input type="number" id="updateHabitacionPlanta" placeholder="1">
+                            </div>
+                            <div class="form-group">
+                                <label>Tipo:</label>
+                                <select id="updateHabitacionTipo">
+                                    <option value="Individual">Individual</option>
+                                    <option value="Doble">Doble</option>
+                                    <option value="Triple">Triple</option>
+                                    <option value="Familiar">Familiar</option>
+                                    <option value="Suite">Suite</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Precio por Noche:</label>
+                                <input type="number" id="updateHabitacionPrecio" placeholder="150">
+                            </div>
+                            <div class="form-group">
+                                <label>Número de Personas:</label>
+                                <input type="number" id="updateHabitacionPersonas" placeholder="2">
+                            </div>
+                            <div class="form-group">
+                                <label>¿Es Suite?</label>
+                                <select id="updateHabitacionSuite">
+                                    <option value="0">No</option>
+                                    <option value="1">Sí</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Disponibilidad:</label>
+                                <select id="updateHabitacionDisponible">
+                                    <option value="1">Disponible</option>
+                                    <option value="0">No Disponible</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-warning" onclick="actualizarHabitacionCompleta()">Actualizar Habitación</button>
+                            <div class="loading" id="updateHabitacionLoading">Actualizando...</div>
+                            <div class="response-section" id="updateHabitacionResponse">
+                                <div class="response-content" id="updateHabitacionContent"></div>
+                            </div>
+                        </div>
+
+                        <!-- Eliminar Habitación -->
+                        <div class="operation-card">
+                            <h3>🗑️ Eliminar Habitación</h3>
+                            <div class="form-group">
+                                <label>ID de la Habitación:</label>
+                                <input type="number" id="deleteHabitacionId" placeholder="1">
+                            </div>
+                            <button class="btn btn-danger" onclick="eliminarHabitacion()">Eliminar Habitación</button>
+                            <div class="loading" id="deleteHabitacionLoading">Eliminando...</div>
+                            <div class="response-section" id="deleteHabitacionResponse">
+                                <div class="response-content" id="deleteHabitacionContent"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Reservas -->
+                <div id="reservas" class="tab-pane">
+                    <div class="operations-grid">
+                        <!-- Buscar Reserva -->
+                        <div class="operation-card">
+                            <h3>🔍 Buscar Reserva</h3>
+                            <div class="form-group">
+                                <label>ID de la Reserva:</label>
+                                <input type="number" id="buscarReservaId" placeholder="1">
+                            </div>
+                            <button class="btn" onclick="buscarReserva()">Buscar Reserva</button>
+                            <div class="loading" id="buscarReservaLoading">Buscando...</div>
+                            <div class="response-section" id="buscarReservaResponse">
+                                <div class="response-content" id="buscarReservaContent"></div>
+                            </div>
+                        </div>
+
+                        <!-- Crear Reserva -->
+                        <div class="operation-card">
+                            <h3>➕ Crear Nueva Reserva</h3>
+                            <div class="form-group">
+                                <label>ID del Cliente:</label>
+                                <input type="number" id="crearReservaClienteId" placeholder="1">
+                            </div>
+                            <div class="form-group">
+                                <label>ID de la Habitación:</label>
+                                <input type="number" id="crearReservaHabitacionId" placeholder="2">
+                            </div>
+                            <div class="form-group">
+                                <label>Fecha de Entrada:</label>
+                                <input type="date" id="crearReservaFechaEntrada">
+                            </div>
+                            <div class="form-group">
+                                <label>Fecha de Salida:</label>
+                                <input type="date" id="crearReservaFechaSalida">
+                            </div>
+                            <button class="btn btn-success" onclick="crearReserva()">Crear Reserva</button>
+                            <div class="loading" id="crearReservaLoading">Creando...</div>
+                            <div class="response-section" id="crearReservaResponse">
+                                <div class="response-content" id="crearReservaContent"></div>
+                            </div>
+                        </div>
+
+                        <!-- Cancelar / Eliminar Reserva -->
+                        <div class="operation-card">
+                            <h3>⚠️ Gestionar Reserva</h3>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                                <!-- Cancelar -->
+                                <div>
+                                    <h4 style="color: #8b7a60; margin-bottom: 15px; font-size: 1.1rem;">❌ Cancelar</h4>
+                                    <div class="form-group">
+                                        <label>ID de la Reserva:</label>
+                                        <input type="number" id="cancelarReservaId" placeholder="1">
+                                    </div>
+                                    <button class="btn btn-warning" onclick="cancelarReserva()">Cancelar Reserva</button>
+                                    <div class="loading" id="cancelarReservaLoading">Cancelando...</div>
+                                </div>
+                                
+                                <!-- Eliminar -->
+                                <div>
+                                    <h4 style="color: #8b7a60; margin-bottom: 15px; font-size: 1.1rem;">🗑️ Eliminar</h4>
+                                    <div class="form-group">
+                                        <label>ID de la Reserva:</label>
+                                        <input type="number" id="deleteReservaId" placeholder="1">
+                                    </div>
+                                    <button class="btn btn-danger" onclick="eliminarReserva()">Eliminar Reserva</button>
+                                    <div class="loading" id="deleteReservaLoading">Eliminando...</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Respuestas -->
+                            <div class="response-section" id="cancelarReservaResponse">
+                                <h5 style="color: #8b7a60; margin-bottom: 10px;">Resultado - Cancelar:</h5>
+                                <div class="response-content" id="cancelarReservaContent"></div>
+                            </div>
+                            
+                            <div class="response-section" id="deleteReservaResponse">
+                                <h5 style="color: #8b7a60; margin-bottom: 10px;">Resultado - Eliminar:</h5>
+                                <div class="response-content" id="deleteReservaContent"></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // SISTEMA DE LOGIN
+        function login(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            if (username === 'admin' && password === '2DawAp1') {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('appScreen').style.display = 'flex';
+                document.getElementById('currentUser').textContent = username;
+                sessionStorage.setItem('loggedIn', 'true');
+                sessionStorage.setItem('username', username);
+            } else {
+                errorDiv.style.display = 'block';
+                setTimeout(() => {
+                    errorDiv.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('loggedIn');
+            sessionStorage.removeItem('username');
+            document.getElementById('appScreen').style.display = 'none';
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+
+        // Verificar si ya hay sesión activa
+        window.onload = function() {
+            if (sessionStorage.getItem('loggedIn') === 'true') {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('appScreen').style.display = 'flex';
+                document.getElementById('currentUser').textContent = sessionStorage.getItem('username');
+            }
+        };
+
+        // FUNCIONES DE LA APP
+        function showTab(tabName) {
+            const tabs = document.querySelectorAll('.tab-pane');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function mostrarRespuesta(loadingId, responseId, contentId, result, data) {
+            const loading = document.getElementById(loadingId);
+            const response = document.getElementById(responseId);
+            const content = document.getElementById(contentId);
+            
+            loading.style.display = 'none';
+            response.style.display = 'block';
+            
+            const statusClass = result.ok ? 'success' : 'error';
+            let formattedContent = '';
+            
+            if (result.ok) {
+                formattedContent = formatearDatos(data);
+            } else {
+                formattedContent = `<div class="error-message">❌ ${data.error || 'Error desconocido'}</div>`;
+            }
+            
+            content.innerHTML = `<div class="status ${statusClass}">
+                ${result.ok ? '✅ Éxito' : '❌ Error'} (${result.status})
+            </div>${formattedContent}`;
+        }
+
+        function formatearDatos(data) {
+            if (!data) return '<div class="info">Sin datos</div>';
+            
+            if (data.error) {
+                return `<div class="error-message">❌ ${data.error}</div>`;
+            }
+            
+            if (data.mensaje && Object.keys(data).length <= 3) {
+                let html = `<div class="success-message">✅ ${data.mensaje}</div>`;
+                if (data.id) html += `<div class="info"><strong>ID:</strong> ${data.id}</div>`;
+                if (data.precio_total) html += `<div class="info"><strong>Precio Total:</strong> €${data.precio_total}</div>`;
+                if (data.dias) html += `<div class="info"><strong>Días:</strong> ${data.dias}</div>`;
+                if (data.total) html += `<div class="info"><strong>Total creadas:</strong> ${data.total}</div>`;
+                return html;
+            }
+            
+            if (Array.isArray(data)) {
+                if (data.length === 0) return '<div class="info">📋 No hay datos disponibles</div>';
+                
+                let html = `<div class="list-header">📋 Se encontraron ${data.length} resultado(s):</div>`;
+                data.forEach((item, index) => {
+                    html += `<div class="data-card">
+                        <div class="card-header">${index + 1}. ${obtenerTitulo(item)}</div>
+                        ${formatearItem(item)}
+                    </div>`;
+                });
+                return html;
+            }
+            
+            return `<div class="data-card">
+                <div class="card-header">${obtenerTitulo(data)}</div>
+                ${formatearItem(data)}
+            </div>`;
+        }
+
+        function obtenerTitulo(item) {
+            if (item.nombre) return `${item.nombre} ${item.apellidos || ''}`.trim();
+            if (item.numero) return `Habitación ${item.numero}`;
+            if (item.cliente_id && item.habitacion_id) return `Reserva ${item.id || ''}`;
+            return `Elemento ${item.id || ''}`;
+        }
+
+        function formatearItem(item) {
+            let html = '';
+            
+            if (item.nombre && item.dni) {
+                html += `
+                    <div class="data-row"><span class="label">👤 Nombre:</span> ${item.nombre} ${item.apellidos || ''}</div>
+                    <div class="data-row"><span class="label">🆔 DNI:</span> ${item.dni}</div>
+                    <div class="data-row"><span class="label">📧 Email:</span> ${item.correo}</div>
+                    ${item.telefono ? `<div class="data-row"><span class="label">📞 Teléfono:</span> ${item.telefono}</div>` : ''}
+                    <div class="data-row"><span class="label">🔢 ID:</span> ${item.id}</div>
+                `;
+            }
+            else if (item.numero && item.tipo) {
+                html += `
+                    <div class="data-row"><span class="label">🚪 Número:</span> ${item.numero}</div>
+                    <div class="data-row"><span class="label">🏢 Planta:</span> ${item.planta}</div>
+                    <div class="data-row"><span class="label">🏠 Tipo:</span> ${item.tipo}</div>
+                    <div class="data-row"><span class="label">💰 Precio:</span> €${item.precio}/noche</div>
+                    <div class="data-row"><span class="label">👥 Personas:</span> ${item.num_personas}</div>
+                    <div class="data-row"><span class="label">✨ Suite:</span> ${item.suite == 1 ? 'Sí' : 'No'}</div>
+                    <div class="data-row"><span class="label">🟢 Disponible:</span> ${item.disponible == 1 ? 'Sí' : 'No'}</div>
+                    <div class="data-row"><span class="label">🔢 ID:</span> ${item.id}</div>
+                `;
+            }
+            else if (item.cliente_id && item.habitacion_id) {
+                html += `
+                    <div class="data-row"><span class="label">👤 Cliente ID:</span> ${item.cliente_id}</div>
+                    <div class="data-row"><span class="label">🏠 Habitación ID:</span> ${item.habitacion_id}</div>
+                    <div class="data-row"><span class="label">📅 Entrada:</span> ${item.fecha_entrada}</div>
+                    <div class="data-row"><span class="label">📅 Salida:</span> ${item.fecha_salida}</div>
+                    <div class="data-row"><span class="label">💰 Precio Total:</span> €${item.precio_total}</div>
+                    <div class="data-row"><span class="label">📋 Estado:</span> <span class="status-badge ${item.estado}">${item.estado}</span></div>
+                    <div class="data-row"><span class="label">🔢 ID:</span> ${item.id}</div>
+                `;
+            }
+            else {
+                Object.entries(item).forEach(([key, value]) => {
+                    html += `<div class="data-row"><span class="label">${key}:</span> ${value}</div>`;
+                });
+            }
+            
+            return html;
+        }
+
+        function mostrarError(loadingId, responseId, contentId, mensaje) {
+            const loading = document.getElementById(loadingId);
+            const response = document.getElementById(responseId);
+            const content = document.getElementById(contentId);
+            
+            loading.style.display = 'none';
+            response.style.display = 'block';
+            content.innerHTML = `<div class="status error">Error</div><div class="error-message">❌ ${mensaje}</div>`;
+        }
+
+        function iniciarCarga(loadingId, responseId) {
+            document.getElementById(loadingId).style.display = 'block';
+            document.getElementById(responseId).style.display = 'none';
+        }
+
+        // FUNCIONES DE CLIENTES
+        async function listarClientes() {
+            iniciarCarga('listarClientesLoading', 'listarClientesResponse');
+            
+            try {
+                const result = await fetch('/API/clientes');
+                const data = await result.json();
+                mostrarRespuesta('listarClientesLoading', 'listarClientesResponse', 'listarClientesContent', result, data);
+            } catch (error) {
+                mostrarError('listarClientesLoading', 'listarClientesResponse', 'listarClientesContent', error.message);
+            }
+        }
+
+        async function buscarCliente() {
+            const id = document.getElementById('buscarClienteId').value;
+            if (!id) {
+                mostrarError('buscarClienteLoading', 'buscarClienteResponse', 'buscarClienteContent', 'ID requerido');
+                return;
+            }
+            
+            iniciarCarga('buscarClienteLoading', 'buscarClienteResponse');
+            
+            try {
+                const result = await fetch(`/API/clientes/${id}`);
+                const data = await result.json();
+                mostrarRespuesta('buscarClienteLoading', 'buscarClienteResponse', 'buscarClienteContent', result, data);
+            } catch (error) {
+                mostrarError('buscarClienteLoading', 'buscarClienteResponse', 'buscarClienteContent', error.message);
+            }
+        }
+
+        async function crearCliente() {
+            const nombre = document.getElementById('crearClienteNombre').value;
+            const apellidos = document.getElementById('crearClienteApellidos').value;
+            const dni = document.getElementById('crearClienteDni').value;
+            const correo = document.getElementById('crearClienteCorreo').value;
+            const telefono = document.getElementById('crearClienteTelefono').value;
+            
+            if (!nombre || !apellidos || !dni || !correo) {
+                mostrarError('crearClienteLoading', 'crearClienteResponse', 'crearClienteContent', 'Todos los campos son obligatorios excepto teléfono');
+                return;
+            }
+            
+            iniciarCarga('crearClienteLoading', 'crearClienteResponse');
+            
+            try {
+                const result = await fetch('/API/clientes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario: { usuario: "admin", contrasena: "2DawAp1" },
+                        cliente: { nombre, apellidos, dni, correo, telefono }
+                    })
+                });
+                const data = await result.json();
+                mostrarRespuesta('crearClienteLoading', 'crearClienteResponse', 'crearClienteContent', result, data);
+            } catch (error) {
+                mostrarError('crearClienteLoading', 'crearClienteResponse', 'crearClienteContent', error.message);
+            }
+        }
+
+        async function actualizarCliente() {
+            const id = document.getElementById('updateClienteId').value;
+            const nombre = document.getElementById('updateClienteNombre').value;
+            const apellidos = document.getElementById('updateClienteApellidos').value;
+            const correo = document.getElementById('updateClienteCorreo').value;
+            const telefono = document.getElementById('updateClienteTelefono').value;
+            
+            if (!id) {
+                mostrarError('updateClienteLoading', 'updateClienteResponse', 'updateClienteContent', 'ID requerido');
+                return;
+            }
+            
+            iniciarCarga('updateClienteLoading', 'updateClienteResponse');
+            
+            try {
+                const clienteData = {};
+                if (nombre) clienteData.nombre = nombre;
+                if (apellidos) clienteData.apellidos = apellidos;
+                if (correo) clienteData.correo = correo;
+                if (telefono) clienteData.telefono = telefono;
+                
+                const result = await fetch(`/API/clientes/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario: { usuario: "admin", contrasena: "2DawAp1" },
+                        cliente: clienteData
+                    })
+                });
+                const data = await result.json();
+                mostrarRespuesta('updateClienteLoading', 'updateClienteResponse', 'updateClienteContent', result, data);
+            } catch (error) {
+                mostrarError('updateClienteLoading', 'updateClienteResponse', 'updateClienteContent', error.message);
+            }
+        }
+
+        async function eliminarCliente() {
+            const id = document.getElementById('deleteClienteId').value;
+            if (!id) {
+                mostrarError('deleteClienteLoading', 'deleteClienteResponse', 'deleteClienteContent', 'ID requerido');
+                return;
+            }
+            
+            iniciarCarga('deleteClienteLoading', 'deleteClienteResponse');
+            
+            try {
+                const result = await fetch(`/API/clientes/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario: { usuario: "admin", contrasena: "2DawAp1" }
+                    })
+                });
+                const data = await result.json();
+                mostrarRespuesta('deleteClienteLoading', 'deleteClienteResponse', 'deleteClienteContent', result, data);
+            } catch (error) {
+                mostrarError('deleteClienteLoading', 'deleteClienteResponse', 'deleteClienteContent', error.message);
+            }
+        }
+
+        // FUNCIONES DE HABITACIONES
+        async function buscarHabitacion() {
+            const id = document.getElementById('buscarHabitacionId').value;
+            if (!id) {
+                mostrarError('buscarHabitacionLoading', 'buscarHabitacionResponse', 'buscarHabitacionContent', 'ID requerido');
+                return;
+            }
+            
+            iniciarCarga('buscarHabitacionLoading', 'buscarHabitacionResponse');
+            
+            try {
+                const result = await fetch(`/API/habitaciones/${id}`);
+                const data = await result.json();
+                mostrarRespuesta('buscarHabitacionLoading', 'buscarHabitacionResponse', 'buscarHabitacionContent', result, data);
+            } catch (error) {
+                mostrarError('buscarHabitacionLoading', 'buscarHabitacionResponse', 'buscarHabitacionContent', error.message);
+            }
+        }
+
+        async function cargarDatosHabitacion() {
+            const id = document.getElementById('updateHabitacionId').value;
+            const loadingElement = document.getElementById('loadingHabitacionData');
+            
+            if (!id) {
+                loadingElement.style.display = 'none';
+                limpiarFormularioHabitacion();
+                return;
+            }
+            
+            loadingElement.style.display = 'block';
+            
+            try {
+                const result = await fetch(`/API/habitaciones/${id}`);
+                const data = await result.json();
+                
+                if (result.ok && data) {
+                    // Rellenar formulario con datos existentes
+                    document.getElementById('updateHabitacionNumero').value = data.numero || '';
+                    document.getElementById('updateHabitacionPlanta').value = data.planta || '';
+                    document.getElementById('updateHabitacionTipo').value = data.tipo || 'Individual';
+                    document.getElementById('updateHabitacionPrecio').value = data.precio || '';
+                    document.getElementById('updateHabitacionPersonas').value = data.num_personas || '';
+                    document.getElementById('updateHabitacionSuite').value = data.suite || '0';
+                    document.getElementById('updateHabitacionDisponible').value = data.disponible || '1';
+                } else {
+                    limpiarFormularioHabitacion();
+                    // Mostrar error sutil
+                    console.warn('No se pudieron cargar los datos de la habitación');
+                }
+                
+                loadingElement.style.display = 'none';
+            } catch (error) {
+                loadingElement.style.display = 'none';
+                limpiarFormularioHabitacion();
+                console.error('Error cargando datos:', error);
+            }
+        }
+
+        function limpiarFormularioHabitacion() {
+            document.getElementById('updateHabitacionNumero').value = '';
+            document.getElementById('updateHabitacionPlanta').value = '';
+            document.getElementById('updateHabitacionTipo').value = 'Individual';
+            document.getElementById('updateHabitacionPrecio').value = '';
+            document.getElementById('updateHabitacionPersonas').value = '';
+            document.getElementById('updateHabitacionSuite').value = '0';
+            document.getElementById('updateHabitacionDisponible').value = '1';
+        }
+
+        async function crearHabitacion() {
+            const numero = document.getElementById('crearHabitacionNumero').value;
+            const planta = document.getElementById('crearHabitacionPlanta').value;
+            const tipo = document.getElementById('crearHabitacionTipo').value;
+            const precio = document.getElementById('crearHabitacionPrecio').value;
+            const num_personas = document.getElementById('crearHabitacionPersonas').value;
+            const suite = document.getElementById('crearHabitacionSuite').value;
+            
+            if (!numero || !planta || !precio || !num_personas) {
+                mostrarError('crearHabitacionLoading', 'crearHabitacionResponse', 'crearHabitacionContent', 'Todos los campos son obligatorios');
+                return;
+            }
+            
+            iniciarCarga('crearHabitacionLoading', 'crearHabitacionResponse');
+            
+            try {
+                const result = await fetch('/API/habitaciones', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario: { usuario: "admin", contrasena: "2DawAp1" },
+                        habitacion: { numero, planta, tipo, precio, suite, num_personas },
+                        opcion: { n: 1 }
+                    })
+                });
+                const data = await result.json();
+                mostrarRespuesta('crearHabitacionLoading', 'crearHabitacionResponse', 'crearHabitacionContent', result, data);
+            } catch (error) {
+                mostrarError('crearHabitacionLoading', 'crearHabitacionResponse', 'crearHabitacionContent', error.message);
+            }
+        }
+
+        async function actualizarHabitacionCompleta() {
+            const id = document.getElementById('updateHabitacionId').value;
+            const numero = document.getElementById('updateHabitacionNumero').value;
+            const planta = document.getElementById('updateHabitacionPlanta').value;
+            const tipo = document.getElementById('updateHabitacionTipo').value;
+            const precio = document.getElementById('updateHabitacionPrecio').value;
+            const num_personas = document.getElementById('updateHabitacionPersonas').value;
+            const suite = document.getElementById('updateHabitacionSuite').value;
+            const disponible = document.getElementById('updateHabitacionDisponible').value;
+            
+            if (!id) {
+                mostrarError('updateHabitacionLoading', 'updateHabitacionResponse', 'updateHabitacionContent', 'ID requerido');
+                return;
+            }
+            
+            iniciarCarga('updateHabitacionLoading', 'updateHabitacionResponse');
+            
+            try {
+                const habitacionData = {};
+                if (numero) habitacionData.numero = numero;
+                if (planta) habitacionData.planta = planta;
+                if (tipo) habitacionData.tipo = tipo;
+                if (precio) habitacionData.precio = precio;
+                if (num_personas) habitacionData.num_personas = num_personas;
+                if (suite !== '') habitacionData.suite = suite;
+                if (disponible !== '') habitacionData.disponible = disponible;
+                
+                const body = {
+                    usuario: { usuario: "admin", contrasena: "2DawAp1" },
+                    habitacion: habitacionData
+                };
+                
+                const result = await fetch(`/API/habitaciones/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await result.json();
+                mostrarRespuesta('updateHabitacionLoading', 'updateHabitacionResponse', 'updateHabitacionContent', result, data);
+            } catch (error) {
+                mostrarError('updateHabitacionLoading', 'updateHabitacionResponse', 'updateHabitacionContent', error.message);
+            }
+        }
+
+        async function eliminarHabitacion() {
+            const id = document.getElementById('deleteHabitacionId').value;
+            if (!id) {
+                mostrarError('deleteHabitacionLoading', 'deleteHabitacionResponse', 'deleteHabitacionContent', 'ID requerido');
+                return;
+            }
+            
+            iniciarCarga('deleteHabitacionLoading', 'deleteHabitacionResponse');
+            
+            try {
+                const result = await fetch(`/API/habitaciones/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario: { usuario: "admin", contrasena: "2DawAp1" }
+                    })
+                });
+                const data = await result.json();
+                mostrarRespuesta('deleteHabitacionLoading', 'deleteHabitacionResponse', 'deleteHabitacionContent', result, data);
+            } catch (error) {
+                mostrarError('deleteHabitacionLoading', 'deleteHabitacionResponse', 'deleteHabitacionContent', error.message);
+            }
+        }
+
+        // FUNCIONES DE RESERVAS
+        async function buscarReserva() {
+            const id = document.getElementById('buscarReservaId').value;
+            if (!id) {
+                mostrarError('buscarReservaLoading', 'buscarReservaResponse', 'buscarReservaContent', 'ID requerido');
+                return;
+            }
+            
+            iniciarCarga('buscarReservaLoading', 'buscarReservaResponse');
+            
+            try {
+                const result = await fetch(`/API/reservas/${id}`);
+                const data = await result.json();
+                mostrarRespuesta('buscarReservaLoading', 'buscarReservaResponse', 'buscarReservaContent', result, data);
+            } catch (error) {
+                mostrarError('buscarReservaLoading', 'buscarReservaResponse', 'buscarReservaContent', error.message);
+            }
+        }
+
+        async function crearReserva() {
+            const cliente_id = document.getElementById('crearReservaClienteId').value;
+            const habitacion_id = document.getElementById('crearReservaHabitacionId').value;
+            const fecha_entrada = document.getElementById('crearReservaFechaEntrada').value;
+            const fecha_salida = document.getElementById('crearReservaFechaSalida').value;
+            
+            if (!cliente_id || !habitacion_id || !fecha_entrada || !fecha_salida) {
+                mostrarError('crearReservaLoading', 'crearReservaResponse', 'crearReservaContent', 'Todos los campos son obligatorios');
+                return;
+            }
+            
+            iniciarCarga('crearReservaLoading', 'crearReservaResponse');
+            
+            try {
+                const result = await fetch('/API/reservas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario: { usuario: "admin", contrasena: "2DawAp1" },
+                        reserva: { cliente_id, habitacion_id, fecha_entrada, fecha_salida }
+                    })
+                });
+                const data = await result.json();
+                mostrarRespuesta('crearReservaLoading', 'crearReservaResponse', 'crearReservaContent', result, data);
+            } catch (error) {
+                mostrarError('crearReservaLoading', 'crearReservaResponse', 'crearReservaContent', error.message);
+            }
+        }
+
+        async function cancelarReserva() {
+            const id = document.getElementById('cancelarReservaId').value;
+            if (!id) {
+                mostrarError('cancelarReservaLoading', 'cancelarReservaResponse', 'cancelarReservaContent', 'ID requerido');
+                return;
+            }
+            
+            iniciarCarga('cancelarReservaLoading', 'cancelarReservaResponse');
+            
+            try {
+                const result = await fetch(`/API/reservas/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario: { usuario: "admin", contrasena: "2DawAp1" },
+                        accion: "cancelar"
+                    })
+                });
+                const data = await result.json();
+                mostrarRespuesta('cancelarReservaLoading', 'cancelarReservaResponse', 'cancelarReservaContent', result, data);
+            } catch (error) {
+                mostrarError('cancelarReservaLoading', 'cancelarReservaResponse', 'cancelarReservaContent', error.message);
+            }
+        }
+
+        async function completarReserva() {
+            const id = document.getElementById('completarReservaId').value;
+            if (!id) {
+                mostrarError('completarReservaLoading', 'completarReservaResponse', 'completarReservaContent', 'ID requerido');
+                return;
+            }
+            
+            iniciarCarga('completarReservaLoading', 'completarReservaResponse');
+            
+            try {
+                const result = await fetch(`/API/reservas/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario: { usuario: "admin", contrasena: "2DawAp1" },
+                        accion: "completar"
+                    })
+                });
+                const data = await result.json();
+                mostrarRespuesta('completarReservaLoading', 'completarReservaResponse', 'completarReservaContent', result, data);
+            } catch (error) {
+                mostrarError('completarReservaLoading', 'completarReservaResponse', 'completarReservaContent', error.message);
+            }
+        }
+
+        async function eliminarReserva() {
+            const id = document.getElementById('deleteReservaId').value;
+            if (!id) {
+                mostrarError('deleteReservaLoading', 'deleteReservaResponse', 'deleteReservaContent', 'ID requerido');
+                return;
+            }
+            
+            iniciarCarga('deleteReservaLoading', 'deleteReservaResponse');
+            
+            try {
+                const result = await fetch(`/API/reservas/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario: { usuario: "admin", contrasena: "2DawAp1" }
+                    })
+                });
+                const data = await result.json();
+                mostrarRespuesta('deleteReservaLoading', 'deleteReservaResponse', 'deleteReservaContent', result, data);
+            } catch (error) {
+                mostrarError('deleteReservaLoading', 'deleteReservaResponse', 'deleteReservaContent', error.message);
+            }
+        }
+    </script>
+</body>
+</html>
