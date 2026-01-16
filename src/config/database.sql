@@ -95,7 +95,7 @@ INSERT INTO habitaciones (numero, planta, tipo, precio, suite, num_personas) VAL
 
 -- Insertar datos de ejemplo para reservas
 INSERT INTO reservas (cliente_id, habitacion_id, usuario_id, fecha_entrada, fecha_salida, precio_total) VALUES
-(1, 1, 1, '2025-01-15', '2025-01-18', 240.00),
-(2, 2, 1, '2025-01-20', '2025-01-25', 600.00),
-(3, 5, 1, '2025-02-01', '2025-02-05', 1000.00),
-(4, 6, 1, '2025-02-10', '2025-02-12', 360.00);
+(1, 1, 1, '2026-01-15', '2026-01-18', 240.00),
+(2, 2, 1, '2026-01-20', '2026-01-25', 600.00),
+(3, 5, 1, '2026-02-01', '2026-02-05', 1000.00),
+(4, 6, 1, '2026-02-10', '2026-02-12', 360.00);

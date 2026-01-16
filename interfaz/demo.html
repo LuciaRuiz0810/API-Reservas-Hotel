@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Reservas Hotel</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Pantalla de Login -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-box">
+            <h1>Sistema de Reservas Hotel</h1>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Usuario:</label>
+                    <input type="text" id="username" required placeholder="Introduce tu usuario">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña:</label>
+                    <input type="password" id="password" required placeholder="Introduce tu contraseña">
+
+                </div>
+                <button type="submit">Iniciar Sesión</button>
+                <div id="loginError" class="error-message" style="display:none;"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Pantalla Principal -->
+    <div id="mainScreen" class="main-container" style="display:none;">
+        <!-- Header -->
+        <header>
+            <h1>Sistema de Reservas Hotel</h1>
+            <div class="user-info">
+                <span>Usuario: <strong id="currentUser"></strong></span>
+                <button type="button" onclick="logout()" class="btn-logout">Cerrar Sesión</button>
+            </div>
+        </header>
+
+        <!-- Navegación -->
+        <nav class="nav-menu">
+            <button type="button" class="nav-btn active" onclick="showSection('reservas')">Reservas</button>
+            <button type="button" class="nav-btn" onclick="showSection('habitaciones')">Habitaciones</button>
+            <button type="button" class="nav-btn" onclick="showSection('clientes')">Clientes</button>
+        </nav>
+
+        <!-- Secciones -->
+        <main class="content">
+            <!-- Sección Reservas -->
+            <section id="reservas-section" class="section active">
+                <h2>Reservas</h2>
+                <div id="reservas-list"></div>
+                <div id="add-reserva-form" class="add-form" style="display:none;">
+                    <h3>Nueva Reserva</h3>
+                    <div id="fechas-ocupadas-info-new" style="margin-bottom:15px; padding:10px; background:#fff3cd; border:1px solid #ffc107; border-radius:4px; display:none;">
+                        <strong>Fechas ocupadas para esta habitación:</strong>
+                        <div id="fechas-ocupadas-list-new"></div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID Cliente</th>
+                                <th>Habitación</th>
+                                <th>Fecha Entrada</th>
+                                <th>Fecha Salida</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><input type="number" id="new-reserva-cliente" required></td>
+                                <td><select id="new-reserva-habitacion" required></select></td>
+                                <td><input type="date" id="new-reserva-entrada" required></td>
+                                <td><input type="date" id="new-reserva-salida" required></td>
+                                <td>
+                                    <button type="button" onclick="addReserva()" class="btn-add">Añadir</button>
+                                    <button type="button" onclick="cancelAdd('reserva')" class="btn-cancel">Cancelar</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <button type="button" id="btn-new-reserva" onclick="showAddForm('reserva')" class="btn-new" style="display:none;">+ Nueva Reserva</button>
+            </section>
+
+            <!-- Sección Habitaciones -->
+            <section id="habitaciones-section" class="section">
+                <h2>Habitaciones</h2>
+                <div id="habitaciones-list"></div>
+                <div id="add-habitacion-form" class="add-form" style="display:none;">
+                    <h3>Nueva Habitación</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Número</th>
+                                <th>Planta</th>
+                                <th>Tipo</th>
+                                <th>Precio</th>
+                                <th>Personas</th>
+                                <th>Suite</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><input type="number" id="new-habitacion-numero" required></td>
+                                <td><input type="number" id="new-habitacion-planta" required></td>
+                                <td>
+                                    <select id="new-habitacion-tipo" required>
+                                        <option value="Individual">Individual</option>
+                                        <option value="Doble">Doble</option>
+                                        <option value="Triple">Triple</option>
+                                        <option value="Suite">Suite</option>
+                                    </select>
+                                </td>
+                                <td><input type="number" id="new-habitacion-precio" required></td>
+                                <td><input type="number" id="new-habitacion-personas" required></td>
+                                <td>
+                                    <select id="new-habitacion-suite" required>
+                                        <option value="0">No</option>
+                                        <option value="1">Sí</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <button type="button" onclick="addHabitacion()" class="btn-add">Añadir</button>
+                                    <button type="button" onclick="cancelAdd('habitacion')" class="btn-cancel">Cancelar</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <button type="button" id="btn-new-habitacion" onclick="showAddForm('habitacion')" class="btn-new" style="display:none;">+ Nueva Habitación</button>
+            </section>
+
+            <!-- Sección Clientes -->
+            <section id="clientes-section" class="section">
+                <h2>Clientes</h2>
+                <div id="clientes-list"></div>
+                <div id="add-cliente-form" class="add-form" style="display:none;">
+                    <h3>Nuevo Cliente</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Apellidos</th>
+                                <th>DNI</th>
+                                <th>Correo</th>
+                                <th>Teléfono</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><input type="text" id="new-cliente-nombre" required></td>
+                                <td><input type="text" id="new-cliente-apellidos" required></td>
+                                <td><input type="text" id="new-cliente-dni" required></td>
+                                <td><input type="email" id="new-cliente-correo" required></td>
+                                <td><input type="tel" id="new-cliente-telefono"></td>
+                                <td>
+                                    <button type="button" onclick="addCliente()" class="btn-add">Añadir</button>
+                                    <button type="button" onclick="cancelAdd('cliente')" class="btn-cancel">Cancelar</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <button type="button" id="btn-new-cliente" onclick="showAddForm('cliente')" class="btn-new" style="display:none;">+ Nuevo Cliente</button>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

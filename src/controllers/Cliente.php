@@ -70,6 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
     try {
 
         //Array de credenciales de sesión para verificar que el usuario tiene permisos
+        //Recoge el contenido del body en json thunder client
         $datos = json_decode(file_get_contents("php://input"), true);
 
         //Validar credenciales (rangos con privilegios -> 1,4,6)

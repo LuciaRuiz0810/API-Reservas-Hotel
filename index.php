@@ -7,20 +7,21 @@
 header('Content-Type: application/json');
 
 //Obtener la ruta solicitada
-$peticion = $_SERVER['REQUEST_URI'];
-$peticion = str_replace('/API', '', $peticion);
-$peticion = parse_url($peticion, PHP_URL_PATH);
+$peticion = $_SERVER['REQUEST_URI']; /*Guarda la ruta */
+$peticion = str_replace('/API', '', $peticion); /*Elimina /API de la ruta interna*/
+$peticion = parse_url($peticion, PHP_URL_PATH);  /*Elimina los parametros */
 
 //Dividir la ruta en segmentos
 $peticion = explode('/', trim($peticion, '/'));
 
 //Esta estructura analiza la URL enviada por Thunder Client y se ejecuta en el archivo correspondiente (cliente, habitaciones o reservas)
 
-//Si la URL empieza con 'clientes'
+
 if($peticion[0] == ''){
     //Carga un archivo basico
     include(__DIR__ . '/src/controllers/inicio.php');
 
+    //Si la URL empieza con 'clientes'
 } elseif ($peticion[0] === 'clientes') {
 
      // Si hay un número después de /clientes/ lo guardará en $_GET['id']

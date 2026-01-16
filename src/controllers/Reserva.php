@@ -118,6 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
             http_response_code(200);
             echo json_encode(['mensaje' => 'TODAS las Reservas han sido eliminadas']);
             exit();
+            
         } else {
             //Si no se especifica si son todas o una en concreto, se informará para evitar borrados por error
             //Ej --> http://localhost/API/src/controllers/Reserva.php
