@@ -54,6 +54,11 @@ function showMainScreen() {
         document.getElementById('btn-new-reserva').style.display = 'block';
         document.getElementById('btn-new-habitacion').style.display = 'block';
         document.getElementById('btn-new-cliente').style.display = 'block';
+    } else {
+        // Para usuarios cliente, ocultar completamente los botones
+        document.getElementById('btn-new-reserva').style.display = 'none';
+        document.getElementById('btn-new-habitacion').style.display = 'none';
+        document.getElementById('btn-new-cliente').style.display = 'none';
     }
 
     // Cargar datos iniciales
